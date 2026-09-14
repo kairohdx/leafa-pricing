@@ -39,7 +39,7 @@ leafa-pricing/
 
 ## Estado atual
 
-O projeto está em estruturação. A API possui a organização inicial de pastas, arquivos de código em branco e arquivos de dependências. Os models, endpoints, regras e testes ainda serão implementados. O frontend ainda não foi desenvolvido.
+O projeto está em estruturação. A API possui models SQLAlchemy e schemas Pydantic para empresas, identidade, unidades, materiais, produtos, serviços, precificação, vendas, auditoria e análises, com 31 testes aprovados. [Veja os contratos, garantias e limites implementados](api/doc/models-e-schemas.md). Endpoints, migrações e regras de negócio ainda estão pendentes. O frontend ainda não foi desenvolvido.
 
 A arquitetura prevista é uma API modular com SQLAlchemy e Alembic, usando SQLite inicialmente e preparada para evoluir para PostgreSQL. A demonstração no Render poderá usar armazenamento efêmero, com perda dos dados aceita nesse ambiente.
 
