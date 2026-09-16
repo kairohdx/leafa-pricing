@@ -9,7 +9,6 @@ class ProductMaterialCreate(Schema):
     unit_code: Code
 
 class ProductMaterialUpdate(Patch):
-    material_id: UUID | None = None
     quantity: Quantity | None = None
     unit_code: Code | None = None
 
@@ -29,6 +28,9 @@ class ProductUpdate(Patch):
     sku: Annotated[str, Field(min_length=1, max_length=60)] | None = Field(default=None, json_schema_extra={"nullable": True})
     description: str | None = Field(default=None, json_schema_extra={"nullable": True})
 
-class ProductRead(ProductCreate, TenantRead):
+class ProductSummary(ProductCreate, TenantRead):
     archived_at: AwareDatetime | None = None
+
+
+class ProductRead(ProductSummary):
     materials: list[ProductMaterialRead] = Field(default_factory=list)

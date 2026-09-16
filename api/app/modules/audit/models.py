@@ -1,10 +1,11 @@
 from datetime import datetime
 from uuid import UUID
 from sqlalchemy import String, JSON, Index
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, validates
 from app.db.base import Base
 from app.db.mixins import TenantMixin, tenant_key, tenant_fk
 from app.db.types import UTCDateTime, utc_now
+from app.modules.audit.redaction import redact
 
 
 class AuditEvent(TenantMixin, Base):
@@ -17,3 +18,7 @@ class AuditEvent(TenantMixin, Base):
     changes: Mapped[dict] = mapped_column(JSON, default=dict)
     request_id: Mapped[str | None] = mapped_column(String(100))
     occurred_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
+
+    @validates("changes")
+    def redact_changes(self, key, value):
+        return redact(value)

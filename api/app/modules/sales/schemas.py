@@ -40,7 +40,7 @@ class SaleUpdate(Patch):
     final_total: Money | None = None
     lines: list[SaleLineCreate] | None = None
 
-class SaleRead(TenantRead):
+class SaleSummary(TenantRead):
     description: str
     occurred_at: AwareDatetime
     status: SaleStatus
@@ -52,4 +52,7 @@ class SaleRead(TenantRead):
     cost_total: Money | None
     pricing_snapshot: dict[str, JsonValue] | None
     currency: Currency
+
+
+class SaleRead(SaleSummary):
     lines: list[SaleLineRead] = Field(default_factory=list)

@@ -1,5 +1,7 @@
 # Documentação do frontend
 
+Veja [Deploy do frontend](deploy.md) para a integração planejada nos modos local, Docker e Render. O componente ainda não é executável.
+
 [Voltar ao README do projeto](../../README.md)
 
 Painel web do Leafa Pricing, previsto em React + Vite, para cadastrar materiais, produtos e serviços, lançar vendas e consultar análises da empresa.

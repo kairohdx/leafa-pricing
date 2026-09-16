@@ -13,3 +13,4 @@ data/
 playwright-report/
 test-results/
 *_temp*
+*.dump

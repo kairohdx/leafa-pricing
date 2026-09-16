@@ -42,3 +42,15 @@ class TokenResponse(Schema):
     access_token: str
     token_type: str = "bearer"
     expires_at: AwareDatetime
+
+
+class ProfileUpdate(Patch):
+    username: Annotated[str, Field(min_length=1, max_length=60)] | None = None
+    name: Annotated[str, Field(min_length=1, max_length=255)] | None = None
+    email: Annotated[EmailStr, Field(max_length=255)] | None = None
+    phone: Annotated[str, Field(max_length=20)] | None = None
+
+
+class PasswordChange(Schema):
+    current_password: SecretStr
+    new_password: Annotated[SecretStr, Field(min_length=8, max_length=128)]

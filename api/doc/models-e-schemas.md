@@ -1,5 +1,7 @@
 # Models e schemas
 
+Atualização posterior: configuração, migração inicial e autenticação básica foram entregues no passo 0. Veja [Inicialização da API](inicializacao.md) para o estado atual; as pendências abaixo registram o recorte original dos models.
+
 Implementado em 14/09/2026. Os models usam SQLAlchemy 2 e os contratos usam Pydantic 2. Esta entrega cobre persistência e validação estrutural; não implementa endpoints nem fórmulas de negócio.
 
 ## Modelos

@@ -31,7 +31,6 @@ class MaterialPackageCreate(Schema):
     unit_code: Code
 
 class MaterialPackageUpdate(Patch):
-    material_id: UUID | None = None
     name: Name | None = None
     quantity: Quantity | None = None
     unit_code: Code | None = None

@@ -39,18 +39,14 @@ leafa-pricing/
 
 ## Estado atual
 
-O projeto está em estruturação. A API possui models SQLAlchemy e schemas Pydantic para empresas, identidade, unidades, materiais, produtos, serviços, precificação, vendas, auditoria e análises, com 31 testes aprovados. [Veja os contratos, garantias e limites implementados](api/doc/models-e-schemas.md). Endpoints, migrações e regras de negócio ainda estão pendentes. O frontend ainda não foi desenvolvido.
+O projeto está em estruturação. A API possui models, schemas, paginação, configuração, migração inicial, health check e autenticação por sessão, com dependências de permissões e isolamento por empresa. A suíte possui 49 testes aprovados. Os CRUDs de negócio, fórmulas e frontend ainda serão implementados. Render é o destino escolhido para a próxima etapa de publicação.
 
 A arquitetura prevista é uma API modular com SQLAlchemy e Alembic, usando SQLite inicialmente e preparada para evoluir para PostgreSQL. A demonstração no Render poderá usar armazenamento efêmero, com perda dos dados aceita nesse ambiente.
 
 ## Como rodar
 
-A preencher quando a aplicação estiver executável.
+Os modos de execução estão no [índice de deploy](doc/README.md): [local](doc/execucao-local.md), [Docker](doc/deploy-docker.md) e [Render](doc/deploy-hospedado.md). Para banco + API local, use `python manage.py setup` e `python manage.py local`. O frontend está pendente; Docker e Render possuem configuração, mas ainda precisam de validação nos respectivos ambientes.
 
-- Pré-requisitos e versões: a definir.
-- Instalação e variáveis de ambiente: a documentar.
-- Banco de dados, migrações e dados de demonstração: a documentar.
-- Execução da API e do frontend: a documentar.
-- Execução dos testes: a documentar.
+Siga o [guia de inicialização da API](api/doc/inicializacao.md), com comandos para Linux/Windows, configuração, migrações e testes. Ainda não há conta padrão ou seed de execução; as duas empresas desta etapa existem somente nas fixtures de teste.
 
 Os comandos específicos serão mantidos nos READMEs da [API](api/doc/README.md) e do [frontend](front/doc/README.md).
