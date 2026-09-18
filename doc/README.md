@@ -2,11 +2,11 @@
 
 | Modo | Guia | Estado |
 | --- | --- | --- |
-| Local | [Execução local](execucao-local.md) | API + SQLite com comando Python; início e parada testados no Windows |
-| Docker | [Docker](deploy-docker.md) | Dockerfile e Compose para API + PostgreSQL; execução ainda não validada |
-| Hospedado | [Render](deploy-hospedado.md) | Blueprint para API + PostgreSQL; ainda não publicado |
+| Local | [Execução local](execucao-local.md) | API + SQLite + frontend com launcher Python; início e parada testados no Windows |
+| Docker | [Docker](deploy-docker.md) | Dockerfiles e Compose para frontend + API + PostgreSQL; execução ainda não validada |
+| Hospedado | [Render](deploy-hospedado.md) | Blueprint para Static Site + API + PostgreSQL; ainda não publicado |
 
-O frontend não existe; os três modos estão explicitamente incompletos quanto a esse componente. Não há container ou tela fictícia para simular sua conclusão.
+O frontend inclui contas, catálogo, regras, vendas, indicadores e auditoria, com execução local integrada. Configuração de container/Static Site e testes de produção no CI estão preparados. Docker não está instalado no ambiente local desta entrega; execução dos containers e publicação continuam pendentes. Veja o [estado da validação frontend](../front/doc/README.md).
 
 Validação desta entrega: 52 testes aprovados no Windows, incluindo início/parada real do launcher, porta ocupada, migração e seed idempotente. YAML de Compose e Render lido localmente; não validado pelos respectivos serviços.
 

@@ -1,6 +1,6 @@
 # Render
 
-O `render.yaml` da raiz define um Web Service Python para a API e um Render PostgreSQL separado. O frontend será um Static Site quando existir, configurado para chamar a URL pública da API.
+O `render.yaml` da raiz define um Web Service Python para a API, um Render PostgreSQL separado e um Static Site para o frontend. O site chama diretamente a URL pública HTTPS da API. Configuração, CORS, build e CD do frontend estão no [guia de publicação](../front/doc/deploy.md).
 
 O Blueprint seleciona planos pagos (`starter` para API e `basic-256mb` para banco), permitindo migração no pre-deploy e armazenamento separado da aplicação. Revise os planos e custos na conta antes de provisionar. Nenhum recurso foi criado nesta entrega.
 
@@ -12,9 +12,9 @@ O Blueprint seleciona planos pagos (`starter` para API e `basic-256mb` para banc
 4. O start executa `python -m uvicorn app.main:app --app-dir api --host 0.0.0.0 --port $PORT`. O health check usa `/health`.
 5. Confira os logs e teste `/health`, `/docs` e o fluxo autenticado após provisionar uma conta ou executar seed explicitamente.
 
-O Render injeta `DATABASE_URL` a partir do banco. `APP_ENV=production` e `DEMO_MODE=false` estão definidos. `CORS_ORIGINS=[]` será substituído por uma lista JSON com a origem exata do frontend quando disponível. Não habilite curingas. O banco bloqueia acesso público por `ipAllowList: []`; conexão da API utiliza a rede interna.
+O Render injeta `DATABASE_URL` a partir do banco. `APP_ENV=production` e `DEMO_MODE=false` estão definidos. `CORS_ORIGINS` na API e `VITE_API_URL` no frontend são solicitados via `sync: false`: configure a lista JSON de origens exatas do site e a URL pública HTTPS da API. O banco bloqueia acesso público por `ipAllowList: []`; conexão da API utiliza a rede interna.
 
-Migrações ficam no pre-deploy, não no start de cada instância. Seed não é automático: para uma demonstração, habilite `DEMO_MODE`, disponibilize `DEMO_PASSWORD` temporariamente no ambiente do serviço e execute uma única vez `PYTHONPATH=api python -m app.scripts.seed_demo` pelo shell do Render. Remova a senha depois. Contas novas fora de demonstração dependem do futuro fluxo de provisionamento.
+Migrações ficam no pre-deploy, não no start de cada instância. Seed não é automático: para uma demonstração, habilite `DEMO_MODE`, disponibilize `DEMO_PASSWORD` temporariamente no ambiente do serviço e execute uma única vez `PYTHONPATH=api python -m app.scripts.seed_demo` pelo shell do Render. Remova a senha depois. Contas novas podem usar `/cadastro` no frontend. O catálogo global de unidades exige preparação explícita conforme o guia de unidades.
 
 ## Atualizar e recuperar
 

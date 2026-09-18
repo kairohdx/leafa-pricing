@@ -42,7 +42,9 @@ Cinco dimensões: `count` (escala 0), `mass`, `length`, `area` e `volume` (escal
 
 O seed não exige modo de demonstração: são dados do catálogo, sem contas. Pode ser repetido preservando IDs, nomes e símbolos existentes. Conflitos de escala, dimensão ou fatores interrompem a transação, em vez de modificar dados silenciosamente. Não roda automaticamente no startup; execute explicitamente após a migração inicial.
 
-Esta entrega armazena e publica fatores; não implementa conversões, arredondamentos ou validação de compatibilidade na composição de produtos. Essas regras continuam nas próximas etapas.
+O catálogo armazena e publica fatores. Os CRUDs de materiais e produtos validam compatibilidade de dimensões; conversões e arredondamentos continuam pendentes.
+
+Atualização da integração com o frontend: a CLI passou a importar o registro completo dos models para funcionar também em processo novo, sem depender de imports prévios da aplicação/testes. Um teste de subprocesso valida migração, seed repetido e preservação dos IDs.
 
 ## Verificação
 

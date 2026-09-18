@@ -1,4 +1,4 @@
-# Docker — API e PostgreSQL
+# Docker — Frontend, API e PostgreSQL
 
 Pré-requisitos: Docker com Compose v2 e engine iniciado; Python apenas para usar `manage.py`. Os comandos são comuns a Linux e Windows com containers Linux disponíveis.
 
@@ -18,7 +18,7 @@ O container da API roda como usuário sem privilégios, aguarda o banco, aplica 
 
 Para seed manual, configure `DEMO_MODE=true` antes de subir o ambiente e exporte `DEMO_PASSWORD` no shell conforme o guia local. Execute `docker compose exec -e DEMO_PASSWORD api python -m app.scripts.seed_demo`. O seed não roda automaticamente em reinícios.
 
-O frontend está pendente; há **dois containers**, não três. A imagem e o serviço de frontend serão adicionados com sua implementação.
+O frontend é o terceiro serviço, servido por Nginx em `http://127.0.0.1:8080` (`FRONT_PORT`). O build usa Node 22; o navegador acessa `/api` na mesma origem, encaminhado internamente à API. Há fallback para rotas SPA, cache de assets e health check estático. Prepare unidades com `docker compose exec api python -m app.scripts.units_catalog seed`. Veja [configuração do frontend](../front/doc/deploy.md).
 
 ## Dados e limpeza
 

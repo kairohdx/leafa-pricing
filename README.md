@@ -39,13 +39,13 @@ leafa-pricing/
 
 ## Estado atual
 
-O projeto está em estruturação. A API possui models, schemas, paginação, configuração, migração inicial, health check e autenticação por sessão, com dependências de permissões e isolamento por empresa. A suíte possui 49 testes aprovados. Os CRUDs de negócio, fórmulas e frontend ainda serão implementados. Render é o destino escolhido para a próxima etapa de publicação.
+Os CRUDs e consultas da API estão implementados, com autenticação por sessão, permissões e isolamento por empresa. O frontend inclui contas, administração de usuários, catálogo de materiais/embalagens, serviços e produtos com composição, regras de precificação, vendas com total manual e histórico, indicadores por período/moeda e auditoria administrativa, com navegação responsiva. Fórmulas de precificação e validação de publicação continuam pendentes. Render é o destino escolhido para publicação.
 
 A arquitetura prevista é uma API modular com SQLAlchemy e Alembic, usando SQLite inicialmente e preparada para evoluir para PostgreSQL. A demonstração no Render poderá usar armazenamento efêmero, com perda dos dados aceita nesse ambiente.
 
 ## Como rodar
 
-Os modos de execução estão no [índice de deploy](doc/README.md): [local](doc/execucao-local.md), [Docker](doc/deploy-docker.md) e [Render](doc/deploy-hospedado.md). Para banco + API local, use `python manage.py setup` e `python manage.py local`. O frontend está pendente; Docker e Render possuem configuração, mas ainda precisam de validação nos respectivos ambientes.
+Os modos de execução estão no [índice de deploy](doc/README.md): [local](doc/execucao-local.md), [Docker](doc/deploy-docker.md) e [Render](doc/deploy-hospedado.md). Com Python 3.13 e Node.js 22.12+ da linha 22, use `python manage.py setup` e `python manage.py local` para banco + API + frontend. Abra `http://127.0.0.1:5173`. Use `--api-only` para instalar/rodar apenas a API. Docker/Render agora têm configuração do frontend; execução dos containers e publicação hospedada ainda precisam ser validadas.
 
 Siga o [guia de inicialização da API](api/doc/inicializacao.md), com comandos para Linux/Windows, configuração, migrações e testes. Ainda não há conta padrão ou seed de execução; as duas empresas desta etapa existem somente nas fixtures de teste.
 

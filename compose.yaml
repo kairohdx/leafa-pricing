@@ -36,6 +36,14 @@ services:
       retries: 12
       start_period: 30s
     restart: unless-stopped
+  front:
+    build:
+      context: ./front
+    ports:
+      - "127.0.0.1:${FRONT_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
 volumes:
   postgres_data:
-# Frontend service will be added with its implementation; no placeholder image.

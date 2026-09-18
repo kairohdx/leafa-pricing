@@ -9,9 +9,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.db.models import UnitDimension, UnitOfMeasure
 from app.db.session import build_engine
 from app.modules.units import service
-from app.modules.units.models import UnitDimension, UnitOfMeasure
 from app.modules.units.schemas import UnitDimensionCreate, UnitDimensionUpdate, UnitDimensionRead, UnitOfMeasureCreate, UnitOfMeasureUpdate, UnitOfMeasureRead
 
 

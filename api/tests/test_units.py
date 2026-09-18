@@ -1,4 +1,7 @@
 from decimal import Decimal
+import os
+import subprocess
+import sys
 from uuid import uuid4
 
 import pytest
@@ -7,9 +10,33 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.db.models import Company, Material, UnitDimension, UnitOfMeasure
+from app.core.config import ROOT
+from app.db.session import build_engine
 from app.modules.units import service
 from app.modules.units.schemas import UnitDimensionCreate, UnitDimensionUpdate, UnitOfMeasureCreate, UnitOfMeasureUpdate
 from tests.test_companies import client, login, payload
+
+
+def test_seed_cli_in_fresh_process(tmp_path):
+    url = f"sqlite:///{(tmp_path / 'units.db').as_posix()}"
+    env = os.environ | {"DATABASE_URL": url, "APP_ENV": "test", "PYTHONPATH": str(ROOT / "api")}
+    subprocess.run([sys.executable, "-m", "alembic", "-c", str(ROOT / "api/alembic.ini"), "upgrade", "head"], cwd=ROOT, env=env, check=True, capture_output=True, text=True)
+    engine = build_engine(url)
+    try:
+        previous_ids = None
+        for _ in range(2):
+            result = subprocess.run([sys.executable, "-m", "app.scripts.units_catalog", "seed"], cwd=ROOT, env=env, capture_output=True, text=True)
+            assert result.returncode == 0, result.stderr
+            assert "Catalog ready." in result.stdout
+            with Session(engine) as db:
+                ids = set(db.scalars(select(UnitOfMeasure.id)))
+                assert len(ids) == 8
+                assert db.scalar(select(func.count()).select_from(UnitDimension)) == 5
+            if previous_ids is not None:
+                assert ids == previous_ids
+            previous_ids = ids
+    finally:
+        engine.dispose()
 
 
 def test_catalog_read_pagination_and_no_public_writes(client):
