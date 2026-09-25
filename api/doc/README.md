@@ -23,6 +23,7 @@ As dependências estão em [requirements.txt](../requirements.txt) e [requiremen
 | `app/modules/identity/` | Usuários e sessões de autenticação |
 | `app/modules/companies/` | Empresas e gestão de seus usuários |
 | `app/modules/materials/` | Materiais e unidades de medida |
+| `app/modules/units/` | Dimensões e catálogo global de unidades |
 | `app/modules/products/` | Produtos e composição por materiais |
 | `app/modules/services/` | Serviços e preços cadastrados |
 | `app/modules/pricing/` | Configurações e futuras regras de precificação |
@@ -36,17 +37,64 @@ As dependências estão em [requirements.txt](../requirements.txt) e [requiremen
 
 ## Estado atual
 
-Somente a estrutura e os arquivos de dependências foram criados. Os arquivos de código, configuração e testes estão vazios; a API ainda não pode ser iniciada. Os models, a autenticação, o isolamento por empresa e as regras ainda não estão implementados.
+[Indicadores e séries de vendas](analytics.md) implementados, com período, moeda, dias no fuso da empresa e cobertura de custos. Suíte atual: 99 testes aprovados e 1 ignorado localmente.
+
+[Consultas de auditoria](audit.md) implementadas: leitura administrativa por empresa, paginação, filtros e limpeza de campos estruturados de credenciais.
+
+[Vendas](sales.md) implementadas com rascunhos, itens, snapshots, total manual, conclusão/cancelamento e paginação. Suíte atual: 93 testes aprovados e 1 ignorado localmente.
+
+[Regras de precificação](pricing.md) executam cinco estratégias com validação, arredondamento, custos por composição e conversões. Previews, integração com vendas, versionamento e snapshots estão implementados.
+
+[Produtos e composição](products.md) implementados, com listagem resumida, detalhe com materiais, validação dimensional, arquivamento e auditoria.
+
+[Serviços](services.md) implementados, com preço base, paginação, busca, arquivamento/restauração e auditoria.
+
+[Materiais e embalagens](materials.md) implementados, com paginação, arquivamento/restauração, validação dimensional e auditoria.
+
+Catálogo de [Dimensões e unidades](units.md) implementado: consultas autenticadas e paginadas, manutenção administrativa por CLI e seed inicial idempotente.
+
+Primeiro CRUD implementado: [Empresas](companies.md), com cadastro e administrador inicial, consulta/edição da própria empresa, auditoria e comando de ativação no servidor.
+
+Segundo CRUD implementado: [Usuários e sessões](users.md), com paginação, administração por empresa, perfil, troca de senha e revogação de sessões. Suíte atual: 69 testes aprovados e 1 PostgreSQL ignorado localmente.
+
+Models e schemas estão implementados para todos os módulos previstos, com constraints de integridade, referências compostas por empresa, decimais exatos e datas UTC. A API agora inicia com configuração, migração inicial, health check, login/logout e perfil autenticado. Permissões, filtros por empresa, CRUDs e motor de precificação estão implementados. Validação de 21/09/2026: 154 testes aprovados, 1 PostgreSQL ignorado; Ruff aprovado. Publicação continua pendente.
+
+Veja [Models e schemas](models-e-schemas.md) para os campos, relacionamentos, contratos, precisão, testes e limitações desta entrega.
+
+Veja [Paginação](paginacao.md) para os contratos de listagem e o helper SQLAlchemy.
+
+## Datas e fusos horários
+
+`app/db/types.py` centraliza o tipo `UTCDateTime` e a função `utc_now()`.
+
+- A aplicação fornece datas com fuso; valores sem fuso são rejeitados na gravação.
+- SQLite armazena UTC sem informação de fuso, e o tipo recoloca UTC ao ler.
+- PostgreSQL usa `TIMESTAMP WITH TIME ZONE`; entradas e saídas são normalizadas para UTC.
+- `TimestampMixin` gera `created_at` e `updated_at` na aplicação com `default=utc_now`; atualizações pelo SQLAlchemy usam `onupdate=utc_now`.
+- `AuthSession.expires_at` e `revoked_at` usam o mesmo tipo. A duração é configurada por `SESSION_HOURS` e a expiração é verificada em cada requisição autenticada.
+- SQL direto deve fornecer timestamps explicitamente, pois não há default ou trigger de horário no servidor. Atualizações sem alteração efetiva não necessariamente emitem UPDATE.
+- O fuso cadastrado na empresa é usado para apresentação e períodos de relatórios.
+
+Exemplo do cálculo de expiração de sessão:
+
+```python
+from datetime import timedelta
+from app.db.types import utc_now
+
+expires_at = utc_now() + timedelta(hours=24)
+```
+
+Testes em `tests/test_datetime_types.py`: cinco casos aprovados com SQLite em memória e verificação do dialect PostgreSQL. Integração com servidor PostgreSQL ainda não executada.
 
 ## Como rodar
 
-A preencher após a implementação da inicialização e da configuração da API.
+O launcher local e as configurações Docker/Render estão descritos em [Deploy da API](deploy.md). Há seed opcional explícito de demonstração; veja o [guia local](../../doc/execucao-local.md).
 
-Serão documentados os pré-requisitos, a instalação, as variáveis de ambiente, as migrações, os dados de demonstração, o comando de execução e os testes.
+O passo 0 está implementado. Consulte [Inicialização da API](inicializacao.md) para instalação em Linux/Windows, variáveis, migrações, autenticação, permissões e testes. A suíte atual possui 49 testes aprovados; a publicação no Render será feita no passo 0.1.
 
 ## Documentação a adicionar
 
-- Models e relacionamentos.
+- Migrações e integração dos models com os serviços da aplicação.
 - Autenticação, permissões e isolamento por empresa.
 - Endpoints e contratos de entrada e saída.
 - Regras de negócio e precificação.

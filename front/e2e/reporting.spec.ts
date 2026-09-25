@@ -1,0 +1,111 @@
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
+
+const password = 'report-password-123'
+async function login(page: Page, email: string) {
+  await page.goto('/login')
+  await page.getByLabel('Email', { exact: true }).fill(email)
+  await page.getByLabel('Senha', { exact: true }).fill(password)
+  await page.getByRole('button', { name: 'Entrar na minha conta' }).click()
+  await expect(page.getByRole('button', { name: 'Sair da conta' })).toBeVisible()
+}
+async function account(page: Page, request: APIRequestContext, tag: string) {
+  const slug = `${tag}-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  const email = `${slug}@example.com`
+  expect((await request.post('/api/companies', { data: { company: { name: 'Ateliê resultados', slug }, admin: { name: 'Ana', username: 'ana', email, password } } })).status()).toBe(201)
+  await login(page, email)
+  const token = await page.evaluate(() => JSON.parse(sessionStorage.getItem('leafa.session')!).access_token as string)
+  return { email, headers: { Authorization: `Bearer ${token}` } }
+}
+const period = new URLSearchParams({ start: '2026-09-15T00:00:00-03:00', end: '2026-09-18T00:00:00-03:00', currency: 'BRL' })
+
+test('indicadores: precisão, dia local, moedas, estados, atualização e período', async ({ page, request }, info) => {
+  const { headers } = await account(page, request, `report-${info.project.name}`)
+  const service = await (await request.post('/api/services', { headers, data: { name: 'Serviço', base_price: '1' } })).json()
+  async function sale(total: string, date: string, complete = true) {
+    const res = await request.post('/api/sales', { headers, data: { description: 'Venda de teste', occurred_at: date, final_total: total, lines: [{ kind: 'service', service_id: service.id, quantity: '1' }] } })
+    expect(res.status()).toBe(201)
+    const item = await res.json()
+    if (complete) expect((await request.post(`/api/sales/${item.id}/complete`, { headers })).status()).toBe(200)
+    return item.id as string
+  }
+  const first = await sale('92233720368547758.07', '2026-09-16T01:00:00Z')
+  await sale('92233720368547758.07', '2026-09-16T12:00:00-03:00')
+  await sale('100', '2026-09-16T12:00:00-03:00', false)
+  const cancelled = await sale('100', '2026-09-16T12:00:00-03:00')
+  expect((await request.post(`/api/sales/${cancelled}/cancel`, { headers })).status()).toBe(200)
+  expect((await request.patch('/api/companies/me', { headers, data: { currency: 'USD' } })).status()).toBe(200)
+  await sale('7.25', '2026-09-16T12:00:00-03:00')
+  await page.goto(`/indicadores?${period}`)
+  const metrics = page.getByLabel('Resumo do período')
+  await expect(metrics).toContainText('R$ 184.467.440.737.095.516,14')
+  await expect(metrics).toContainText('Cobertura: 0 de 2 vendas')
+  await expect(metrics).toContainText('Indisponível')
+  await expect(page.getByRole('row', { name: /15\/09\/2026/ })).toContainText('92.233.720.368.547.758,07')
+  await expect(page.getByRole('row', { name: /17\/09\/2026/ })).toContainText('0,00')
+  await page.screenshot({ path: info.outputPath('indicadores.png'), fullPage: true })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  expect((await request.post(`/api/sales/${first}/cancel`, { headers })).status()).toBe(200)
+  await page.getByRole('button', { name: 'Atualizar indicadores' }).click()
+  await expect(metrics).toContainText('R$ 92.233.720.368.547.758,07')
+  await page.getByLabel('Moeda', { exact: true }).selectOption('USD')
+  await page.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await expect(metrics).toContainText('US$ 7,25')
+  await page.getByLabel('Moeda', { exact: true }).selectOption('EUR')
+  await page.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await expect(page.getByRole('heading', { name: 'Nenhuma venda concluída neste período e moeda.' })).toBeVisible()
+  await page.getByLabel('Até').fill('2028-09-18')
+  await page.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await expect(page.getByText(/Informe fim posterior.*366 dias/)).toBeVisible()
+})
+
+test('auditoria: filtros combinados, páginas, detalhe e isolamento', async ({ page, request }, info) => {
+  const { headers } = await account(page, request, `audit-${info.project.name}`)
+  for (let i = 0; i < 11; i++) expect((await request.post('/api/services', { headers, data: { name: `Serviço ${i}`, base_price: '1' } })).status()).toBe(201)
+  const events = await (await request.get('/api/audit-events?entity_type=service&action=create', { headers })).json()
+  const event = events.items[0]
+  await page.goto('/auditoria?entity_type=service&action=create')
+  await expect(page.getByLabel('Paginação')).toContainText('11 registros')
+  await page.getByRole('button', { name: 'Próxima página' }).click()
+  await expect(page.getByLabel('Paginação')).toContainText('Página 2')
+  await page.getByText('Filtros avançados', { exact: true }).click()
+  await page.getByLabel('Ator (ID do usuário)').fill(event.actor_user_id)
+  await page.getByLabel('ID da entidade', { exact: true }).fill(event.entity_id)
+  await page.getByLabel('Request ID', { exact: true }).fill(event.request_id)
+  await page.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await expect(page.getByLabel('Paginação')).toContainText('1 registro')
+  await page.getByRole('link', { name: /Serviço · Cadastro/ }).click()
+  await expect(page.getByRole('heading', { name: 'Detalhe do evento' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'name', exact: true })).toBeVisible()
+  await expect(page.locator('.json-view').first()).toContainText(event.changes.name)
+  await expect(page.locator('main')).toContainText(event.request_id)
+  await page.screenshot({ path: info.outputPath('auditoria.png'), fullPage: true })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.getByRole('link', { name: 'Voltar aos eventos' }).click()
+  await expect(page.getByLabel('ID da entidade', { exact: true })).toHaveValue(event.entity_id)
+  await page.getByLabel('Ação', { exact: true }).selectOption('archive')
+  await page.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await expect(page.getByRole('heading', { name: 'Nenhum evento encontrado.' })).toBeVisible()
+  await page.getByRole('button', { name: 'Sair da conta' }).click()
+  await expect(page.getByRole('heading', { name: 'Bom ter você aqui.' })).toBeVisible()
+  await account(page, request, `other-${info.project.name}`)
+  await page.goto(`/auditoria/${event.id}`)
+  await expect(page.getByRole('alert')).toContainText('Não encontramos este registro')
+  await page.goto(`/indicadores?${period}`)
+  await expect(page.getByRole('heading', { name: 'Nenhuma venda concluída neste período e moeda.' })).toBeVisible()
+})
+
+test('operador consulta indicadores e não acessa auditoria', async ({ page, request }, info) => {
+  const { headers, email } = await account(page, request, `operator-${info.project.name}`)
+  expect((await request.post('/api/users', { headers, data: { name: 'Operador', username: 'op', email: `op-${email}`, password } })).status()).toBe(201)
+  await page.getByRole('button', { name: 'Sair da conta' }).click()
+  await expect(page.getByRole('heading', { name: 'Bom ter você aqui.' })).toBeVisible()
+  await login(page, `op-${email}`)
+  await page.goto(`/indicadores?${period}`)
+  await expect(page.getByRole('heading', { name: 'Nenhuma venda concluída neste período e moeda.' })).toBeVisible()
+  const requests: string[] = []
+  page.on('request', (req) => { if (req.url().includes('/audit-events')) requests.push(req.url()) })
+  await page.goto('/auditoria')
+  await expect(page.getByRole('heading', { name: 'Acesso restrito' })).toBeVisible()
+  expect(requests).toEqual([])
+  await expect(page.getByRole('link', { name: 'Auditoria', exact: true })).toHaveCount(0)
+})

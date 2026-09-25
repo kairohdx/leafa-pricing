@@ -1,35 +1,69 @@
-# Documentação do frontend
+﻿# Frontend — Leafa Pricing
 
-[Voltar ao README do projeto](../../README.md)
+[Voltar ao projeto](../../README.md) · [Arquitetura e sessão](arquitetura.md) · [Empresa, perfil e usuários](contas.md) · [Catálogo](catalogo.md) · [Vendas e precificação](vendas-precificacao.md) · [Indicadores e auditoria](indicadores-auditoria.md) · [Execução e deploy](deploy.md)
 
-Painel web do Leafa Pricing, previsto em React + Vite, para cadastrar materiais, produtos e serviços, lançar vendas e consultar análises da empresa.
+Painel React + Vite + TypeScript, com prioridade para celular. Inclui login, cadastro público de empresa, edição de empresa/perfil, senha/sessões, administração de usuários e catálogo de materiais/embalagens, serviços e produtos com composição. Catálogos possuem busca, paginação, arquivamento/restauração e permissões.
 
-## Direção da interface
+Inclui também regras de precificação com controle de versão e vendas com total manual, itens, snapshots, conclusão e cancelamento. Indicadores apresentam resumo e série diária por período/moeda; auditoria administrativa oferece filtros e detalhe do histórico. O painel inicial apresenta atalhos. Cinco estratégias executáveis, conversões e custos por composição estão integrados, com simulador e sugestões de vendas. O preço final permanece manual.
 
-- Layout inspirado no projeto DueFlow, com navegação organizada, cabeçalho com usuário e estados claros de carregamento, erro e ausência de dados.
-- Prioridade para o celular: formulários em uma coluna e listagens resumidas em cards.
-- Informações secundárias acessíveis no detalhe, mantendo as ações principais visíveis.
-- Tabelas com mais informações em telas maiores.
-- Empresa do usuário identificada no painel, sem troca de empresa dentro da conta.
-- Relatórios apresentados com filtros de período, indicadores e detalhamento sob demanda.
+## Executar
 
-## Estado atual
+Pré-requisitos: Python 3.13, Node.js 22.12+ da linha 22 e npm. Dependências exatas estão no lockfile. Veja também o [requisito oficial do Vite](https://vite.dev/guide/).
 
-O frontend ainda não foi implementado. As telas, a integração com a API e a configuração de execução serão desenvolvidas em uma etapa posterior.
+Na raiz, em Windows ou Linux:
 
-## Como rodar
+```sh
+python manage.py setup
+python manage.py local
+```
 
-A preencher após a criação da aplicação React + Vite.
+Frontend: http://127.0.0.1:5173. API: http://127.0.0.1:8000. Ctrl+C encerra ambos. Use `--port` e `--front-port` para alterar as portas. O frontend usa proxy local `/api`, configurado pelo launcher.
 
-Serão documentados os pré-requisitos, a instalação, as variáveis de ambiente, a conexão com a API, a execução local, o build e os testes.
+Sem conta existente, use “Criar minha empresa” na tela de login (`/cadastro`) ou o [seed explícito](../../doc/execucao-local.md). Para ingressar em uma empresa existente, peça ao administrador que cadastre seu usuário. Nenhuma conta/senha é criada automaticamente.
 
-## Documentação a adicionar
+Antes de cadastrar materiais, prepare explicitamente as unidades padrão com o [guia do catálogo](catalogo.md). O frontend informa quando não há unidades e não simula opções de seleção.
 
-- Organização de pastas e rotas.
-- Componentes e padrões visuais.
-- Comportamento responsivo e acessibilidade.
-- Autenticação, sessão e integração com a API.
-- Fluxos de cadastro, vendas e relatórios.
-- Build e publicação.
+Para terminais separados:
 
-Novos documentos do frontend deverão ficar em `front/doc/` e ser vinculados neste README.
+```sh
+python manage.py local --api-only
+# Em outro terminal:
+cd front
+npm ci
+npm run dev
+```
+
+No Windows PowerShell com bloqueio de scripts, use `npm.cmd` e `npx.cmd`. Consulte `front/.env.example` para outra URL de API.
+
+## Verificação
+
+Na pasta `front/`:
+
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+O E2E prepara migrações/unidades e inicia frontend/API nas portas 5179/8019 com SQLite temporário separado. Testa contas, catálogo, regras e vendas com operações reais, paginação, permissões, decimais, arquivamento, snapshots e isolamento entre empresas. Requer dependências Python instaladas e Chromium do Playwright. `e2e/start_server.py` exige ambiente de teste e URL explícita de banco descartável.
+
+Validação da terceira entrega: 42 testes de frontend (componentes e decimais), 16 cenários E2E (Chromium desktop e viewport móvel), 18 testes da API relacionados ao catálogo, lint e build aprovados no Windows. Os 4 testes do launcher foram validados na primeira entrega; o launcher de produção não mudou nesta etapa. Emulação móvel não representa validação em Safari/iPhone físico. Linux e CI remoto pendentes.
+
+No ambiente restrito do agente, o Playwright precisou de permissão para encerrar processos no Windows; a repetição fora do sandbox concluiu com sucesso.
+
+Quarta entrega (regras e vendas): 61 testes de frontend, 24 cenários E2E com API real em desktop/móvel, lint e build aprovados no Windows. Inclui regressão dos módulos anteriores. Backend sem alterações nesta etapa. Linux, CI remoto e publicação permanecem pendentes. Veja [fluxos e limites de vendas/precificação](vendas-precificacao.md).
+
+Quinta entrega (indicadores e auditoria): 68 testes de frontend, 30 cenários E2E com API real em desktop/móvel, lint e build aprovados no Windows, incluindo regressão dos módulos anteriores. Revisão visual das telas móveis. Backend sem alterações. Veja [fluxos e limites de indicadores/auditoria](indicadores-auditoria.md). Próxima etapa: infraestrutura e validação de publicação, sem afirmar execução remota/Linux.
+
+Sexta entrega (infraestrutura preparada): Dockerfile/Nginx, Compose de três serviços, Static Site no Blueprint e CD opcional após a API. Validados 75 testes frontend, 7 testes simulados do deploy, lint, builds padrão/hospedado e sintaxe YAML. Na regressão completa E2E, 29 cenários passaram, um timeout de login móvel não se reproduziu na repetição dos 8 cenários de catálogo; 2 testes exclusivos de Nginx foram ignorados. Docker ausente localmente: containers, CI remoto/Linux, CORS hospedado e publicação real continuam pendentes. [Configuração, diagnóstico e rollback](deploy.md).
+
+## Motor de precificação — 21/09/2026
+
+Implementados CostEngine, PricingEngine com cinco estratégias, conversões, arredondamentos, validação, previews e snapshots de custos/cálculos. Frontend com cards, campos por estratégia, simulador, detalhamento de composição e sugestões de vendas mantendo total final manual. Sem migração ou alteração de infraestrutura.
+
+Validação final Windows: **154 testes da API aprovados, 1 PostgreSQL ignorado; 79 testes frontend aprovados; 32 E2E aprovados em Chromium desktop/mobile, 2 Nginx ignorados**. Ruff, ESLint, TypeScript e build aprovados. A primeira regressão E2E identificou quebra de layout móvel com custos decimais longos; corrigida e protegida por verificação de largura. A repetição completa passou. Houve necessidade de encerrar um servidor de teste retido pelo sandbox; a execução final fora do sandbox terminou normalmente.
+
+PostgreSQL, Nginx/containers, Linux e publicação não foram validados nesta etapa. Sem deploy no Render. [Fórmulas e decisões](../../api/doc/pricing.md) · [Fluxos e limites](vendas-precificacao.md).

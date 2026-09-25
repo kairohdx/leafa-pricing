@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: leafa-api
+    runtime: python
+    plan: free
+    autoDeployTrigger: "off"
+    buildCommand: pip install -r api/requirements.txt
+    startCommand: python -m app.scripts.start
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.12
+      - key: APP_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "true"
+      - key: PYTHONPATH
+        value: api
+      - key: DATABASE_URL
+        value: sqlite:////tmp/leafa-demo.db
+      - key: CORS_ORIGINS
+        sync: false
+  - type: web
+    name: leafa-front
+    runtime: static
+    rootDir: front
+    autoDeployTrigger: "off"
+    buildCommand: npm ci && npm run build:hosted
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_DEMO_MODE
+        value: "true"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+      - path: /health.json
+        name: Cache-Control
+        value: no-store
