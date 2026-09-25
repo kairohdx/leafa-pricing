@@ -1,12 +1,13 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, HTTPException
 
 from app.core.dependencies import CurrentAuth, AdminAuth, Database, get_tenant_record
 from app.modules.pricing import service
 from app.modules.pricing.models import PricingRule
-from app.modules.pricing.schemas import PricingRuleCreate, PricingRuleUpdate, PricingRuleRead
+from app.modules.pricing.schemas import PricingRuleCreate, PricingRuleUpdate, PricingRuleRead, PricingPreview
+from app.modules.pricing.engine import PricingEngine, decimal
 from app.pagination import Page, PaginationParams
 
 router = APIRouter(prefix="/pricing-rules", tags=["Pricing rules"])
@@ -22,6 +23,15 @@ def list_rules(db: Database, auth: CurrentAuth, params: Pagination,
 @router.post("", response_model=PricingRuleRead, status_code=201)
 def create(data: PricingRuleCreate, request: Request, db: Database, auth: AdminAuth):
     return service.create(db, auth, data, request.state.request_id)
+
+
+@router.post("/preview")
+def preview(data: PricingPreview, auth: CurrentAuth):
+    try:
+        return PricingEngine.calculate(decimal(data.base_cost) if data.base_cost is not None else None,
+                                       data.strategy_key, data.parameters)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
 
 
 @router.get("/{rule_id}", response_model=PricingRuleRead)

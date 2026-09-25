@@ -43,7 +43,7 @@ As dependências estão em [requirements.txt](../requirements.txt) e [requiremen
 
 [Vendas](sales.md) implementadas com rascunhos, itens, snapshots, total manual, conclusão/cancelamento e paginação. Suíte atual: 93 testes aprovados e 1 ignorado localmente.
 
-[Regras de precificação](pricing.md) implementadas como cadastro de configurações, com versionamento e regra padrão por empresa; fórmulas e validações específicas de estratégias permanecem pendentes.
+[Regras de precificação](pricing.md) executam cinco estratégias com validação, arredondamento, custos por composição e conversões. Previews, integração com vendas, versionamento e snapshots estão implementados.
 
 [Produtos e composição](products.md) implementados, com listagem resumida, detalhe com materiais, validação dimensional, arquivamento e auditoria.
 
@@ -57,7 +57,7 @@ Primeiro CRUD implementado: [Empresas](companies.md), com cadastro e administrad
 
 Segundo CRUD implementado: [Usuários e sessões](users.md), com paginação, administração por empresa, perfil, troca de senha e revogação de sessões. Suíte atual: 69 testes aprovados e 1 PostgreSQL ignorado localmente.
 
-Models e schemas estão implementados para todos os módulos previstos, com constraints de integridade, referências compostas por empresa, decimais exatos e datas UTC. A API agora inicia com configuração, migração inicial, health check, login/logout e perfil autenticado. Dependências de papéis e filtros por empresa estão disponíveis para os futuros CRUDs. A suíte possui 49 testes aprovados; CRUDs de negócio, fórmulas e publicação permanecem pendentes.
+Models e schemas estão implementados para todos os módulos previstos, com constraints de integridade, referências compostas por empresa, decimais exatos e datas UTC. A API agora inicia com configuração, migração inicial, health check, login/logout e perfil autenticado. Permissões, filtros por empresa, CRUDs e motor de precificação estão implementados. Validação de 21/09/2026: 154 testes aprovados, 1 PostgreSQL ignorado; Ruff aprovado. Publicação continua pendente.
 
 Veja [Models e schemas](models-e-schemas.md) para os campos, relacionamentos, contratos, precisão, testes e limitações desta entrega.
 

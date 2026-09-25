@@ -12,6 +12,12 @@ router = APIRouter(prefix="/products", tags=["Products"])
 Pagination = Annotated[PaginationParams, Depends()]
 
 
+@router.get("/{product_id}/cost")
+def cost(product_id: UUID, db: Database, auth: CurrentAuth):
+    from app.modules.pricing.costs import product_cost
+    return product_cost(db, auth, product_id)
+
+
 @router.get("", response_model=Page[ProductSummary])
 def list_products(db: Database, auth: CurrentAuth, params: Pagination,
                   search: Annotated[str | None, Query(max_length=180)] = None, archived: bool = False):

@@ -4,6 +4,7 @@ import { ArrowRight, Eye, EyeOff, Leaf, Layers3, ShieldCheck } from 'lucide-reac
 import { useAuth } from '../auth/AuthProvider'
 import { ApiError, errorMessage } from '../api/client'
 import { Feedback } from '../components/Feedback'
+import { DemoNotice } from '../components/DemoNotice'
 
 export function Login() {
   const auth = useAuth()
@@ -32,7 +33,7 @@ export function Login() {
         <div className="story-illustration" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="leaf-tile"><Leaf size={72} strokeWidth={1} /></div><span className="floating-label"><Layers3 size={17} /> Tudo conectado</span><span className="illustration-dot" /></div>
       </div><p className="story-footer">Pequenos detalhes. Grandes possibilidades.</p>
     </section>
-    <section className="login-content"><div className="login-form-wrap"><span className="eyebrow">BEM-VINDO AO LEAFA</span><h2>Bom ter você aqui.</h2><p className="muted">Entre para acessar o espaço da sua empresa.</p>
+    <section className="login-content"><div className="login-form-wrap"><DemoNotice /><span className="eyebrow">BEM-VINDO AO LEAFA</span><h2>Bom ter você aqui.</h2><p className="muted">Entre para acessar o espaço da sua empresa.</p>
       <form onSubmit={submit} className="login-form" aria-label="Entrar na conta">
         {error && <div id="login-error"><Feedback message={error} error /></div>}
         {!error && auth.message && <p className="feedback" role="alert">{auth.message}</p>}

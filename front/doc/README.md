@@ -4,7 +4,7 @@
 
 Painel React + Vite + TypeScript, com prioridade para celular. Inclui login, cadastro público de empresa, edição de empresa/perfil, senha/sessões, administração de usuários e catálogo de materiais/embalagens, serviços e produtos com composição. Catálogos possuem busca, paginação, arquivamento/restauração e permissões.
 
-Inclui também regras de precificação com controle de versão e vendas com total manual, itens, snapshots, conclusão e cancelamento. Indicadores apresentam resumo e série diária por período/moeda; auditoria administrativa oferece filtros e detalhe do histórico. O painel inicial apresenta atalhos. Fórmulas, conversões automáticas e custos calculados não estão disponíveis.
+Inclui também regras de precificação com controle de versão e vendas com total manual, itens, snapshots, conclusão e cancelamento. Indicadores apresentam resumo e série diária por período/moeda; auditoria administrativa oferece filtros e detalhe do histórico. O painel inicial apresenta atalhos. Cinco estratégias executáveis, conversões e custos por composição estão integrados, com simulador e sugestões de vendas. O preço final permanece manual.
 
 ## Executar
 
@@ -59,3 +59,11 @@ Quarta entrega (regras e vendas): 61 testes de frontend, 24 cenários E2E com AP
 Quinta entrega (indicadores e auditoria): 68 testes de frontend, 30 cenários E2E com API real em desktop/móvel, lint e build aprovados no Windows, incluindo regressão dos módulos anteriores. Revisão visual das telas móveis. Backend sem alterações. Veja [fluxos e limites de indicadores/auditoria](indicadores-auditoria.md). Próxima etapa: infraestrutura e validação de publicação, sem afirmar execução remota/Linux.
 
 Sexta entrega (infraestrutura preparada): Dockerfile/Nginx, Compose de três serviços, Static Site no Blueprint e CD opcional após a API. Validados 75 testes frontend, 7 testes simulados do deploy, lint, builds padrão/hospedado e sintaxe YAML. Na regressão completa E2E, 29 cenários passaram, um timeout de login móvel não se reproduziu na repetição dos 8 cenários de catálogo; 2 testes exclusivos de Nginx foram ignorados. Docker ausente localmente: containers, CI remoto/Linux, CORS hospedado e publicação real continuam pendentes. [Configuração, diagnóstico e rollback](deploy.md).
+
+## Motor de precificação — 21/09/2026
+
+Implementados CostEngine, PricingEngine com cinco estratégias, conversões, arredondamentos, validação, previews e snapshots de custos/cálculos. Frontend com cards, campos por estratégia, simulador, detalhamento de composição e sugestões de vendas mantendo total final manual. Sem migração ou alteração de infraestrutura.
+
+Validação final Windows: **154 testes da API aprovados, 1 PostgreSQL ignorado; 79 testes frontend aprovados; 32 E2E aprovados em Chromium desktop/mobile, 2 Nginx ignorados**. Ruff, ESLint, TypeScript e build aprovados. A primeira regressão E2E identificou quebra de layout móvel com custos decimais longos; corrigida e protegida por verificação de largura. A repetição completa passou. Houve necessidade de encerrar um servidor de teste retido pelo sandbox; a execução final fora do sandbox terminou normalmente.
+
+PostgreSQL, Nginx/containers, Linux e publicação não foram validados nesta etapa. Sem deploy no Render. [Fórmulas e decisões](../../api/doc/pricing.md) · [Fluxos e limites](vendas-precificacao.md).

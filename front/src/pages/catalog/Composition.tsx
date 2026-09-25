@@ -1,3 +1,5 @@
+import { QuantityField } from '../../components/ValueFields'
+import { UnsavedChanges } from '../../components/UnsavedChanges'
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
@@ -9,7 +11,7 @@ import { Pagination } from '../../components/Pagination'
 import { ConfirmButton } from '../../components/ConfirmButton'
 import { LoadError } from './Shared'
 import { UnitSelect, useUnits } from './Units'
-import { decimalInput, decimalText } from './decimals'
+import { decimalInput, decimalText, moneyText, currencySymbol } from './decimals'
 import type { Component, Material, Product } from './types'
 
 function MaterialPicker({ selected, exclude, onSelect }: { selected: Material | null; exclude: string[]; onSelect: (material: Material) => void }) {
@@ -40,9 +42,9 @@ function ComponentForm({ productId, material, component, onSaved, onCancel }: { 
       onSaved(await api<Component>(path, { method: component ? 'PATCH' : 'POST', body: JSON.stringify(component ? changes(initial, next) : { ...next, material_id: material.id }) }))
     }, { conflict: 'O material pode já estar na composição, ou o produto/material foi arquivado. Confira o catálogo antes de repetir.' })
   }
-  return <form className="component-form" onSubmit={submit} aria-label="Componente do produto"><h3>{material.name}</h3><FormFeedback state={form} /><fieldset disabled={form.busy}>
-    <div className="form-grid"><Field label="Quantidade na composição" required inputMode="decimal" maxLength={32} value={draft.quantity} error={form.fields.quantity} hint="Maior que zero, até 6 casas decimais. Sem separador de milhar." onChange={(event) => setDraft({ ...draft, quantity: event.target.value })} /><UnitSelect value={draft.unit_code} baseCode={material.purchase_unit_code} error={form.fields.unit_code} onChange={(unit_code) => setDraft({ ...draft, unit_code })} /></div>
-  </fieldset><p className="info-note">Informe a quantidade na unidade selecionada. Não há conversão ou cálculo automático de custos.</p><div className="form-actions"><button className="button secondary" type="button" disabled={form.busy} onClick={onCancel}>Cancelar</button><button className="button primary" disabled={form.busy || !units.data?.some((unit) => unit.code === draft.unit_code)}>{form.busy ? 'Salvando…' : component ? 'Salvar componente' : 'Adicionar à composição'}</button></div></form>
+  return <form className="component-form" onSubmit={submit} aria-label="Componente do produto"><h3>{material.name}</h3><UnsavedChanges dirty={!form.busy && (JSON.stringify(draft) !== JSON.stringify(initial))} /><FormFeedback state={form} /><fieldset disabled={form.busy}>
+    <div className="form-grid"><QuantityField label="Quantidade na composição" required inputMode="decimal" maxLength={32} value={draft.quantity} error={form.fields.quantity} hint={`Ex.: 0,5 ${draft.unit_code}. Quantidade na unidade escolhida.`} onChange={(event) => setDraft({ ...draft, quantity: event.target.value })} /><UnitSelect value={draft.unit_code} baseCode={material.purchase_unit_code} error={form.fields.unit_code} onChange={(unit_code) => setDraft({ ...draft, unit_code })} /></div>
+  </fieldset><p className="info-note">Informe a quantidade na unidade selecionada. Unidades compatíveis são convertidas no cálculo do custo.</p><div className="form-actions"><button className="button secondary" type="button" disabled={form.busy} onClick={() => { if (JSON.stringify(draft) === JSON.stringify(initial) || window.confirm("Descartar alterações não salvas?")) onCancel() }}>Cancelar</button><button className="button primary" disabled={form.busy || !units.data?.some((unit) => unit.code === draft.unit_code)}>{form.busy ? 'Salvando…' : component ? 'Salvar componente' : 'Adicionar à composição'}</button></div></form>
 }
 
 function ComponentCard({ component, product, onSaved, onRemoved }: { component: Component; product: Product; onSaved: (component: Component) => void; onRemoved: (id: string) => void }) {
@@ -68,7 +70,7 @@ export function CompositionPanel({ product }: { product: Product }) {
   const [message, setMessage] = useState('')
   const writable = identity!.user.role === 'admin' && !product.archived_at
   return <section className="catalog-section"><div className="section-heading"><h2>Composição do produto</h2>{writable && !adding && <button className="button secondary" onClick={() => { setAdding(true); setSelected(null); setMessage('') }}><Plus size={17} />Adicionar material</button>}</div>
-    <p className="info-note">Custos calculados indisponíveis. A composição registra materiais, quantidades e unidades; não calcula preço ou custo do produto.</p>
+    <ProductCost key={JSON.stringify(components)} productId={product.id} />
     {product.archived_at && <p className="info-note">Restaure o produto para alterar sua composição.</p>}
     {message && <p className="feedback success-message" role="status">{message}</p>}
     {writable && adding && <section className="detail-card composition-add"><h3>Escolha um material ativo</h3><MaterialPicker selected={selected} exclude={components.map((component) => component.material_id)} onSelect={setSelected} />
@@ -77,4 +79,10 @@ export function CompositionPanel({ product }: { product: Product }) {
     <div className="record-list">{components.map((component) => <ComponentCard key={component.id} component={component} product={product} onSaved={(updated) => { setComponents((previous) => previous.map((item) => item.id === updated.id ? updated : item)); setMessage('Componente atualizado.') }} onRemoved={(id) => { setComponents((previous) => previous.filter((item) => item.id !== id)); setMessage('Componente removido.') }} />)}</div>
     {!components.length && <p className="empty-state">Este produto ainda não possui materiais na composição.</p>}
   </section>
+}
+
+function ProductCost({ productId }: { productId: string }) {
+  const { identity } = useAuth()
+  const result = useResource<{ base_cost: string | null; reason: string | null; components: { material_id: string; name: string; quantity: string; unit_code: string; cost: string; purchase_cost: string; purchase_quantity: string; purchase_unit_code: string; packages: { id: string; name: string; quantity: string; unit_code: string; cost: string }[] }[] }>(`/products/${productId}/cost`)
+  return <section className="detail-card cost-detail"><h3>Custo da composição</h3>{result.loading && <p>Calculando…</p>}{result.error && <LoadError error={result.error} retry={result.reload} />}{result.data && <><p>{result.data.base_cost === null ? result.data.reason : moneyText(result.data.base_cost, identity!.company.currency)}</p><details><summary>Ver cálculo detalhado</summary>{result.data.components.map(row => <article key={row.material_id}><h4>{row.name}</h4><p>Consumo: {decimalText(row.quantity)} {row.unit_code} · Custo proporcional: {currencySymbol(identity!.company.currency)} {row.cost.replace(".", ",")}</p><p>Compra: {currencySymbol(identity!.company.currency)} {row.purchase_cost.replace(".", ",")} por {decimalText(row.purchase_quantity)} {row.purchase_unit_code}</p>{row.packages.map(pack => <p key={pack.id}>Embalagem disponível: {pack.name} · {decimalText(pack.quantity)} {pack.unit_code} · Custo: {currencySymbol(identity!.company.currency)} {pack.cost.replace(".", ",")}</p>)}</article>)}</details></>}</section>
 }

@@ -2,11 +2,10 @@ services:
   - type: web
     name: leafa-api
     runtime: python
-    plan: starter
+    plan: free
     autoDeployTrigger: "off"
     buildCommand: pip install -r api/requirements.txt
-    preDeployCommand: python -m alembic -c api/alembic.ini upgrade head
-    startCommand: python -m uvicorn app.main:app --app-dir api --host 0.0.0.0 --port $PORT
+    startCommand: python -m app.scripts.start
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
@@ -14,11 +13,11 @@ services:
       - key: APP_ENV
         value: production
       - key: DEMO_MODE
-        value: "false"
+        value: "true"
+      - key: PYTHONPATH
+        value: api
       - key: DATABASE_URL
-        fromDatabase:
-          name: leafa-db
-          property: connectionString
+        value: sqlite:////tmp/leafa-demo.db
       - key: CORS_ORIGINS
         sync: false
   - type: web
@@ -33,6 +32,8 @@ services:
         value: "22"
       - key: VITE_API_URL
         sync: false
+      - key: VITE_DEMO_MODE
+        value: "true"
     routes:
       - type: rewrite
         source: /*
@@ -44,10 +45,3 @@ services:
       - path: /health.json
         name: Cache-Control
         value: no-store
-databases:
-  - name: leafa-db
-    plan: basic-256mb
-    postgresMajorVersion: "17"
-    databaseName: leafa
-    user: leafa
-    ipAllowList: []

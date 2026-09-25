@@ -5,6 +5,7 @@ import { request } from '../../api/client'
 import { useFormAction } from '../../api/hooks'
 import { emptyPerson, Field, FormFeedback, PersonFields } from '../../components/Forms'
 import { CompanyFields, emptyCompany } from './CompanyFields'
+import { DemoNotice } from '../../components/DemoNotice'
 
 export function Register() {
   const [company, setCompany] = useState(emptyCompany)
@@ -24,6 +25,7 @@ export function Register() {
     }, { conflict: 'Este identificador de empresa ou email já está cadastrado. Revise os dados.' })
   }
   return <main className="registration-page">
+    <DemoNotice />
     <header className="registration-header"><Link className="brand" to="/login"><span className="brand-icon"><Leaf /></span>leafa</Link><Link className="text-link" to="/login"><ArrowLeft size={16} />Já tenho uma conta</Link></header>
     <div className="registration-intro"><span className="eyebrow">SEU NEGÓCIO COMEÇA AQUI</span><h1>Crie seu espaço no Leafa.</h1><p className="muted">Cadastre sua empresa e a primeira conta de administrador.</p></div>
     <form className="detail-card registration-form" onSubmit={submit}>

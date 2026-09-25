@@ -1,3 +1,4 @@
+import { UnsavedChanges } from '../../components/UnsavedChanges'
 import { useState, type FormEvent } from 'react'
 import { Building2, Pencil } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
@@ -18,10 +19,10 @@ function CompanyEditor({ company, onDone, onCancel }: { company: Company; onDone
       updateIdentity({ company: updated }); onDone()
     }, { conflict: 'Este identificador de empresa já está em uso. Escolha outro.' })
   }
-  return <form className="detail-card" onSubmit={submit} aria-label="Editar empresa"><h2>Editar empresa</h2><FormFeedback state={form} />
+  return <form className="detail-card" onSubmit={submit} aria-label="Editar empresa"><h2>Editar empresa</h2><UnsavedChanges dirty={!form.busy && JSON.stringify(initial) !== JSON.stringify(draft)} /><FormFeedback state={form} />
     <fieldset disabled={form.busy}><CompanyFields value={draft} onChange={setDraft} errors={form.fields} /></fieldset>
     <p className="info-note">A moeda será usada nas novas vendas. Vendas existentes mantêm sua moeda e seus valores, sem conversão. O fuso define a apresentação dos períodos e indicadores da empresa.</p>
-    <div className="form-actions"><button className="button secondary" type="button" onClick={onCancel} disabled={form.busy}>Cancelar</button><button className="button primary" disabled={form.busy}>{form.busy ? 'Salvando…' : 'Salvar empresa'}</button></div>
+    <div className="form-actions"><button className="button secondary" type="button" onClick={() => { if (JSON.stringify(initial) === JSON.stringify(draft) || window.confirm("Descartar alterações não salvas?")) onCancel() }} disabled={form.busy}>Cancelar</button><button className="button primary" disabled={form.busy}>{form.busy ? 'Salvando…' : 'Salvar empresa'}</button></div>
   </form>
 }
 

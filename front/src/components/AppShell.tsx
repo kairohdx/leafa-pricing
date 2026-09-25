@@ -4,6 +4,7 @@ import { Leaf, LayoutDashboard, Building2, UserRound, LogOut, Menu, X, ShoppingB
 import { useAuth } from '../auth/AuthProvider'
 import { errorMessage } from '../api/client'
 import { Feedback } from './Feedback'
+import { DemoNotice } from './DemoNotice'
 
 export function AppShell() {
   const { identity, logout } = useAuth()
@@ -43,7 +44,7 @@ export function AppShell() {
     <aside className="sidebar desktop-sidebar">{navigation()}</aside>
     <dialog ref={dialog} className="mobile-menu" aria-label="Menu de navegação" onClick={(event) => { if (event.target === event.currentTarget) closeMenu() }}><div className="sidebar"><button className="icon-button close-menu" aria-label="Fechar menu" onClick={closeMenu}><X /></button>{navigation()}</div></dialog>
     <div className="workspace"><header className="topbar"><div className="topbar-context"><button className="icon-button menu-trigger" ref={trigger} aria-label="Abrir menu" onClick={() => dialog.current?.showModal()}><Menu /></button><span className="breadcrumb">Meu espaço <span>/</span> <strong>{company.name}</strong></span></div><div className="user-controls"><span className="avatar">{user.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('')}</span><div className="user-caption"><strong>{user.name}</strong><small>{user.role === 'admin' ? 'Administrador' : 'Operador'}</small></div><button className="icon-button" onClick={() => void signOut()} disabled={busy} aria-label={busy ? 'Saindo' : 'Sair da conta'} title="Sair da conta"><LogOut size={19} /></button></div></header>
-      <main id="main-content" tabIndex={-1} className="main-content">{error && <Feedback message={`Não foi possível encerrar a sessão. ${error}`} error />}<Outlet /></main>
+      <main id="main-content" tabIndex={-1} className="main-content"><DemoNotice />{error && <Feedback message={`Não foi possível encerrar a sessão. ${error}`} error />}<Outlet /></main>
       <footer className="workspace-footer"><span>Leafa Pricing</span><span>Seu negócio, bem cuidado.</span></footer>
     </div>
   </div>

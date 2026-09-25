@@ -1,7 +1,7 @@
 export type FieldError = { field: string; code: string }
 
 export class ApiError extends Error {
-  constructor(public status: number, public fields: FieldError[] = [], public requestId?: string) {
+  constructor(public status: number, public fields: FieldError[] = [], public requestId?: string, detail?: string) {
     const messages: Record<number, string> = {
       0: 'Não foi possível conectar. Verifique sua conexão e tente novamente.',
       401: 'Sua sessão expirou ou foi revogada. Entre novamente.',
@@ -10,7 +10,7 @@ export class ApiError extends Error {
       409: 'Os dados entraram em conflito. Atualize a página e tente novamente.',
       422: 'Confira os campos informados e tente novamente.',
     }
-    super(messages[status] || 'O serviço está indisponível no momento. Tente novamente.')
+    super(detail || messages[status] || 'O serviço está indisponível no momento. Tente novamente.')
   }
 }
 
@@ -31,7 +31,8 @@ export async function request<T>(path: string, options: RequestInit & { token?: 
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
-    throw new ApiError(response.status, body.field_errors || [], body.request_id)
+    throw new ApiError(response.status, body.field_errors || [], body.request_id,
+      response.status === 422 && path.startsWith('/pricing-rules') && typeof body.message === 'string' ? body.message : undefined)
   }
   if (response.status === 204) return undefined as T
   return response.json() as Promise<T>

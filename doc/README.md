@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | Local | [Execução local](execucao-local.md) | API + SQLite + frontend com launcher Python; início e parada testados no Windows |
 | Docker | [Docker](deploy-docker.md) | Dockerfiles e Compose para frontend + API + PostgreSQL; execução ainda não validada |
-| Hospedado | [Render](deploy-hospedado.md) | Blueprint para Static Site + API + PostgreSQL; ainda não publicado |
+| Hospedado | [Render](deploy-hospedado.md) | Blueprint para Static Site + API free com SQLite descartável e seed básico no startup; ainda não publicado |
 
 O frontend inclui contas, catálogo, regras, vendas, indicadores e auditoria, com execução local integrada. Configuração de container/Static Site e testes de produção no CI estão preparados. Docker não está instalado no ambiente local desta entrega; execução dos containers e publicação continuam pendentes. Veja o [estado da validação frontend](../front/doc/README.md).
 

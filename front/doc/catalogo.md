@@ -55,7 +55,7 @@ No produto, o seletor de materiais consulta registros ativos, com busca e pagina
 
 Produto arquivado bloqueia mudanças na composição e preserva os componentes. Material arquivado permanece visível na composição; não pode ser editado, mas pode ser removido de produto ativo. Remover componente exige confirmação e afeta somente a composição atual.
 
-O contrato de composição retorna IDs, quantidades e unidades; o frontend consulta o detalhe de cada material para mostrar nome e estado. Custos calculados e preços sugeridos continuam indisponíveis. Não há conversor nem fórmula no frontend.
+O contrato de composição retorna IDs, quantidades e unidades; o frontend consulta o detalhe de cada material para mostrar nome e estado. O painel consulta o custo calculado por componente e total em `GET /products/{id}/cost`. Embalagens mostram seu custo proporcional, sem custo adicional independente. Fórmulas e conversões ficam no backend; sugestões são integradas nas regras e vendas.
 
 ## Testes e correção de integração
 

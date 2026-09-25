@@ -21,6 +21,7 @@ const baseline = async (url: RequestInfo | URL) => {
   if (path.endsWith('/companies/me')) return json(company)
   if (path.includes('/units?')) return json(page(units))
   if (path.endsWith('/materials/m1')) return json(material)
+  if (path.endsWith('/cost')) return json({ base_cost: null, reason: 'Custo indisponível.', components: [] })
   return json(page([]))
 }
 const fetchMock = vi.fn<typeof fetch>()
@@ -98,7 +99,7 @@ it('material arquivado na composição pode ser removido, mas não editado', asy
   expect(await screen.findByText('Material arquivado', { exact: true })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Remover componente' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Editar componente' })).not.toBeInTheDocument()
-  expect(screen.getByText(/Custos calculados indisponíveis/)).toBeInTheDocument()
+  expect(screen.getByText(/Custo indisponível/)).toBeInTheDocument()
 })
 
 it('URL de embalagem vinculada a outro material não revela seu detalhe', async () => {

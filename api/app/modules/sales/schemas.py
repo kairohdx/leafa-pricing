@@ -56,3 +56,9 @@ class SaleSummary(TenantRead):
 
 class SaleRead(SaleSummary):
     lines: list[SaleLineRead] = Field(default_factory=list)
+
+
+class SalePreview(Schema):
+    pricing_rule_id: UUID | None = None
+    sale_id: UUID | None = None
+    lines: list[SaleLineCreate] | None = None

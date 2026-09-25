@@ -8,7 +8,7 @@ from tests.test_companies import client, login, payload
 
 
 def create(client, headers, **extra):
-    return client.post("/pricing-rules", headers=headers, json={"name": "Regra", "strategy_key": "future", "parameters": {"value": "1.25"}, **extra})
+    return client.post("/pricing-rules", headers=headers, json={"name": "Regra", "strategy_key": "cost_multiplier", "parameters": {"multiplier": "1.25"}, **extra})
 
 
 def test_pricing_version_updates_and_audit(client):
@@ -21,14 +21,14 @@ def test_pricing_version_updates_and_audit(client):
     assert create(client, admin, version=99).status_code == 422
     path = f"/pricing-rules/{rule_id}"
     assert client.patch(path, headers=admin, json={"name": "No version"}).status_code == 422
-    updated = client.patch(path, headers=admin, json={"expected_version": 1, "parameters": {"value": "2.00"}})
+    updated = client.patch(path, headers=admin, json={"expected_version": 1, "parameters": {"multiplier": "2.00"}})
     assert updated.status_code == 200 and updated.json()["version"] == 2
     assert client.patch(path, headers=admin, json={"expected_version": 1, "name": "Stale"}).status_code == 409
     assert client.patch(path, headers=admin, json={"expected_version": 2}).json()["version"] == 2
     with Session(client.app.state.engine) as db:
         events = list(db.scalars(select(AuditEvent).where(AuditEvent.entity_id == UUID(rule_id)).order_by(AuditEvent.occurred_at)))
         assert len(events) == 2
-        assert events[-1].changes["parameters"] == {"before": {"value": "1.25"}, "after": {"value": "2.00"}}
+        assert events[-1].changes["parameters"] == {"before": {"multiplier": "1.25"}, "after": {"multiplier": "2.00"}}
 
 
 def test_default_replacement_archive_and_restore(client):

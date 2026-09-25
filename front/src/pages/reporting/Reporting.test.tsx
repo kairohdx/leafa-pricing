@@ -29,8 +29,8 @@ beforeEach(() => {
 
 it('exibe agregado acima do limite individual, custo zero e cobertura parcial', async () => {
   mount()
-  expect(await screen.findByText('BRL 184.467.440.737.095.516,14')).toBeInTheDocument()
-  expect(screen.getByText('BRL 0,00')).toBeInTheDocument()
+  expect(await screen.findByText('R$ 184.467.440.737.095.516,14', { selector: '.metric-value' })).toBeInTheDocument()
+  expect(screen.getByText('R$ 0,00')).toBeInTheDocument()
   expect(screen.getByText(/Custo parcial/)).toBeInTheDocument()
   expect(screen.getByRole('table')).toHaveTextContent('184.467.440.737.095.516,14')
 })
@@ -71,13 +71,13 @@ it('dimensiona barras sem converter valores monetários grandes para ponto flutu
   expect(barWidths(['0.00', '0.00'])).toEqual([0, 0])
 })
 
-it('valida limite de 366 dias e preserva offsets do período', () => {
+it('valida limite de 366 dias com último dia inclusivo', () => {
   const data = new FormData()
-  data.set('start', '2024-01-01T00:00:00-03:00'); data.set('end', '2025-01-01T00:00:00-03:00')
-  expect(periodParams(data, true).get('start')).toBe('2024-01-01T00:00:00-03:00')
-  data.set('end', '2025-01-01T00:00:01-03:00')
+  data.set('start', '2024-01-01'); data.set('end', '2024-12-31')
+  expect(periodParams(data, true).get('start')).toBe('2024-01-01T03:00:00.000Z')
+  data.set('end', '2025-01-01')
   expect(() => periodParams(data, true)).toThrow()
   expect(() => periodParams(data, false)).not.toThrow()
-  data.set('end', '2024-01-01T00:00:00-03:00')
+  data.set('end', '2023-12-31')
   expect(() => periodParams(data, false)).toThrow()
 })

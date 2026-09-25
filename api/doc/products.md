@@ -35,7 +35,7 @@ SKU é opcional e único por empresa quando preenchido, inclusive em produtos ar
 
 ## Composição e histórico
 
-O produto e o material precisam estar ativos e pertencer à mesma empresa para adicionar/editar um componente. Quantidade deve ser positiva e a unidade deve existir e ter a mesma dimensão da unidade de compra do material. Não há conversão automática, cálculo de custos ou arredondamento nesta etapa.
+O produto e o material precisam estar ativos e pertencer à mesma empresa para adicionar/editar um componente. Quantidade deve ser positiva e a unidade deve existir e ter a mesma dimensão da unidade de compra do material. A composição é preservada na unidade informada; `GET /products/{id}/cost` converte quantidades compatíveis e calcula custos proporcionais usando o [CostEngine](pricing.md).
 
 Um material aparece no máximo uma vez na composição. Duplicação retorna 409 com rollback. `material_id` não é editável: para substituir material, remova o componente e adicione outro. `component_id` é o ID de `ProductMaterial`, não o ID do material. Todas as operações validam também que o componente pertence ao produto informado.
 
@@ -47,4 +47,4 @@ Cadastro, edição, arquivamento e mudanças de composição registram auditoria
 
 ## Verificação
 
-`tests/test_products.py` cobre cadastro, SKU, detalhe/composição, listagem resumida, paginação, inclusão/edição/remoção, material duplicado, unidades incompatíveis, isolamento por empresa e produto, arquivamento e permissões. Próximo módulo: regras de precificação; fórmulas permanecem uma entrega separada.
+`tests/test_products.py` cobre cadastro, SKU, detalhe/composição, listagem resumida, paginação, inclusão/edição/remoção, material duplicado, unidades incompatíveis, isolamento por empresa e produto, arquivamento e permissões. O motor de precificação está integrado; seus testes estão em `tests/test_pricing_engine.py`.

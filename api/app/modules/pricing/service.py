@@ -8,6 +8,14 @@ from app.modules.audit.models import AuditEvent
 from app.modules.companies.models import Company
 from app.modules.pricing.models import PricingRule
 from app.modules.pricing.schemas import PricingRuleRead
+from app.modules.pricing.engine import validate
+
+
+def validate_rule(strategy, parameters):
+    try:
+        validate(strategy, parameters)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
 
 
 def lock_company(db, auth):
@@ -40,6 +48,7 @@ def list_rules(db, auth, params, search=None, archived=False):
 
 
 def create(db, auth, data, request_id):
+    validate_rule(data.strategy_key, data.parameters)
     lock_company(db, auth)
     rule = PricingRule(**data.model_dump(exclude={"is_default"}), company_id=auth.company_id, version=1, is_default=False)
     db.add(rule)
@@ -61,6 +70,8 @@ def edit(db, auth, rule_id, data, request_id):
     if data.expected_version != rule.version:
         raise HTTPException(409, "Rule changed; reload it before editing.")
     values = data.model_dump(exclude_unset=True, exclude={"expected_version"})
+    if "strategy_key" in values or "parameters" in values:
+        validate_rule(values.get("strategy_key", rule.strategy_key), values.get("parameters", rule.parameters))
     if values.get("is_default") is True and not rule.is_default:
         clear_other_default(db, auth, rule, request_id)
     changes = {}

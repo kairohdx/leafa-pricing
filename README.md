@@ -39,9 +39,9 @@ leafa-pricing/
 
 ## Estado atual
 
-Os CRUDs e consultas da API estão implementados, com autenticação por sessão, permissões e isolamento por empresa. O frontend inclui contas, administração de usuários, catálogo de materiais/embalagens, serviços e produtos com composição, regras de precificação, vendas com total manual e histórico, indicadores por período/moeda e auditoria administrativa, com navegação responsiva. Fórmulas de precificação e validação de publicação continuam pendentes. Render é o destino escolhido para publicação.
+Os CRUDs e consultas da API estão implementados, com autenticação por sessão, permissões e isolamento por empresa. O frontend inclui contas, administração de usuários, catálogo de materiais/embalagens, serviços e produtos com composição, regras de precificação, vendas com total manual e histórico, indicadores por período/moeda e auditoria administrativa, com navegação responsiva. O motor executa cinco estratégias de precificação, conversões, custos por composição, arredondamento comercial e previews no frontend, preservando snapshots das vendas. A validação de publicação continua pendente. Render é o destino escolhido para publicação.
 
-A arquitetura prevista é uma API modular com SQLAlchemy e Alembic, usando SQLite inicialmente e preparada para evoluir para PostgreSQL. A demonstração no Render poderá usar armazenamento efêmero, com perda dos dados aceita nesse ambiente.
+A arquitetura prevista é uma API modular com SQLAlchemy e Alembic, usando SQLite inicialmente e preparada para evoluir para PostgreSQL. A demonstração no Render usa SQLite efêmero, sem banco separado, com migrações e seed de unidades no startup. Os dados são descartáveis e a interface informa essa condição.
 
 ## Como rodar
 

@@ -1,3 +1,6 @@
+import { QuantityField } from '../../components/ValueFields'
+import { UnsavedChanges } from '../../components/UnsavedChanges'
+import { MoneyField } from '../../components/ValueFields'
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Pencil } from 'lucide-react'
@@ -6,7 +9,7 @@ import { changes, useFormAction, useResource } from '../../api/hooks'
 import { Field, FormFeedback, PageHeading } from '../../components/Forms'
 import { Feedback } from '../../components/Feedback'
 import { catalog, type CatalogItem, type CatalogKind } from './types'
-import { decimalInput, decimalText } from './decimals'
+import { decimalInput, decimalText, moneyText } from './decimals'
 import { UnitSelect, useUnits } from './Units'
 import { ArchiveButton, LoadError, TextArea } from './Shared'
 import { PackagesPanel } from './Packages'
@@ -45,16 +48,16 @@ function CatalogForm({ kind, item, onSaved, onCancel }: { kind: CatalogKind; ite
       onSaved(await api<CatalogItem>(`/${kind}${item ? `/${item.id}` : ''}`, { method: item ? 'PATCH' : 'POST', body: JSON.stringify(item ? changes(payload(kind, initial), next) : next) }))
     }, { conflict: 'Não foi possível salvar. Confira se o SKU já existe (inclusive em arquivados) ou se o registro foi arquivado em outra sessão.' })
   }
-  return <form className="detail-card" onSubmit={submit} aria-label={`${item ? 'Editar' : 'Cadastrar'} ${config.singular}`}><h2>{item ? 'Editar' : 'Cadastrar'} {config.singular}</h2><FormFeedback state={form} />
+  return <form className="detail-card" onSubmit={submit} aria-label={`${item ? 'Editar' : 'Cadastrar'} ${config.singular}`}><h2>{item ? 'Editar' : 'Cadastrar'} {config.singular}</h2><UnsavedChanges dirty={!form.busy && (JSON.stringify(draft) !== JSON.stringify(initial))} /><FormFeedback state={form} />
     <fieldset disabled={form.busy}><div className="form-grid"><Field label="Nome" required maxLength={180} value={draft.name} error={form.fields.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
-      {kind !== 'services' && <Field label="SKU" maxLength={60} hint="Opcional. Identificador único na empresa." value={draft.sku} error={form.fields.sku} onChange={(event) => setDraft({ ...draft, sku: event.target.value })} />}</div>
+      {kind !== 'services' && <Field label="SKU" maxLength={60} hint="Opcional. Código para organizar seus itens, como VELA-001." value={draft.sku} error={form.fields.sku} onChange={(event) => setDraft({ ...draft, sku: event.target.value })} />}</div>
       {kind === 'materials' && <><div className="form-grid"><UnitSelect label="Unidade de compra" value={draft.unit} baseCode={item && 'purchase_unit_code' in item ? item.purchase_unit_code : undefined} error={form.fields.purchase_unit_code} onChange={(unit) => setDraft({ ...draft, unit })} />
-        <Field label="Quantidade de compra" inputMode="decimal" required maxLength={32} hint="Maior que zero; até 6 casas decimais. Sem separador de milhar." value={draft.quantity} error={form.fields.purchase_quantity} onChange={(event) => setDraft({ ...draft, quantity: event.target.value })} /></div>
+        <QuantityField label="Quantidade de compra" inputMode="decimal" required maxLength={32} hint={`Ex.: 0,5 ${draft.unit || "kg"}. Quantidade na unidade escolhida.`} value={draft.quantity} error={form.fields.purchase_quantity} onChange={(event) => setDraft({ ...draft, quantity: event.target.value })} /></div>
         <p className="info-note">Ao trocar a unidade, ajuste a quantidade explicitamente. Não há conversão automática de quantidades ou custos.</p></>}
-      {kind !== 'products' && <Field label={kind === 'materials' ? 'Custo da compra' : 'Preço base'} inputMode="decimal" required maxLength={32} hint={`${identity!.company.currency}. Zero ou maior, com até 2 casas decimais. Use vírgula ou ponto, sem separador de milhar.`} value={draft.cost} error={form.fields[kind === 'materials' ? 'purchase_cost' : 'base_price']} onChange={(event) => setDraft({ ...draft, cost: event.target.value })} />}
+      {kind !== 'products' && <MoneyField currency={identity!.company.currency} label={kind === 'materials' ? 'Custo da compra' : 'Preço base'} inputMode="decimal" required maxLength={32} value={draft.cost} error={form.fields[kind === 'materials' ? 'purchase_cost' : 'base_price']} onChange={cost => setDraft({ ...draft, cost })} />}
       <TextArea label={kind === 'materials' ? 'Observações' : 'Descrição'} value={draft.text} error={form.fields[kind === 'materials' ? 'notes' : 'description']} onChange={(text) => setDraft({ ...draft, text })} />
     </fieldset>
-    <div className="form-actions"><button className="button secondary" type="button" onClick={onCancel} disabled={form.busy}>Cancelar</button><button className="button primary" disabled={form.busy || !unitReady}>{form.busy ? 'Salvando…' : `Salvar ${config.singular}`}</button></div>
+    <div className="form-actions"><button className="button secondary" type="button" onClick={() => { if (!item || JSON.stringify(draft) === JSON.stringify(initial) || window.confirm("Descartar alterações não salvas?")) onCancel() }} disabled={form.busy}>Cancelar</button><button className="button primary" disabled={form.busy || !unitReady}>{form.busy ? 'Salvando…' : `Salvar ${config.singular}`}</button></div>
   </form>
 }
 
@@ -81,8 +84,8 @@ function CatalogDetail({ initialItem, kind }: { initialItem: CatalogItem; kind: 
     {editing && admin && !archived ? <CatalogForm kind={kind} item={item} onCancel={() => setEditing(false)} onSaved={(updated) => { setItem(updated); setEditing(false); setMessage('Registro atualizado.') }} /> :
       <section className="detail-card"><div className="record-main"><h2>Dados do {config.singular}</h2><span className={`record-status ${archived ? '' : 'is-active'}`}>{archived ? 'Arquivado' : 'Ativo'}</span></div>
         <dl className="details">{'sku' in item && <div><dt>SKU</dt><dd>{item.sku || 'Não informado'}</dd></div>}
-          {'purchase_cost' in item && <><div><dt>Compra</dt><dd>{decimalText(item.purchase_quantity)} {item.purchase_unit_code}</dd></div><div><dt>Custo da compra</dt><dd>{identity!.company.currency} {decimalText(item.purchase_cost)}</dd></div></>}
-          {'base_price' in item && <div><dt>Preço base</dt><dd>{identity!.company.currency} {decimalText(item.base_price)}</dd></div>}
+          {'purchase_cost' in item && <><div><dt>Compra</dt><dd>{decimalText(item.purchase_quantity)} {item.purchase_unit_code}</dd></div><div><dt>Custo da compra</dt><dd>{moneyText(item.purchase_cost, identity!.company.currency)}</dd></div></>}
+          {'base_price' in item && <div><dt>Preço base</dt><dd>{moneyText(item.base_price, identity!.company.currency)}</dd></div>}
           <div className="wide-detail"><dt>{'notes' in item ? 'Observações' : 'Descrição'}</dt><dd className="preserve-lines">{('notes' in item ? item.notes : item.description) || 'Não informado'}</dd></div>
         </dl>
         {admin && <div className="form-actions">{!archived && <button className="button secondary" onClick={() => { setEditing(true); setMessage('') }}><Pencil size={16} />Editar {config.singular}</button>}<ArchiveButton item={item} path={`/${kind}/${item.id}`} onSaved={(updated) => { setItem(updated); setMessage(updated.archived_at ? 'Registro arquivado.' : 'Registro restaurado.') }} /></div>}

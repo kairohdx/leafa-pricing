@@ -1,3 +1,5 @@
+import { QuantityField } from '../../components/ValueFields'
+import { UnsavedChanges } from '../../components/UnsavedChanges'
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
@@ -42,9 +44,9 @@ function PackageForm({ item, material, back }: { item?: MaterialPackage; materia
       navigate(back, { replace: true, state: { notice: item ? 'Embalagem atualizada.' : 'Embalagem criada.' } })
     }, { conflict: 'Não foi possível salvar. O nome da embalagem pode estar em uso (inclusive em arquivadas), ou o material/embalagem foi arquivado.' })
   }
-  return <form className="detail-card" onSubmit={submit} aria-label="Dados da embalagem"><FormFeedback state={form} /><fieldset disabled={form.busy}>
+  return <form className="detail-card" onSubmit={submit} aria-label="Dados da embalagem"><UnsavedChanges dirty={!form.busy && (JSON.stringify(draft) !== JSON.stringify(initial))} /><FormFeedback state={form} /><fieldset disabled={form.busy}>
     <Field label="Nome da embalagem" required maxLength={180} value={draft.name} error={form.fields.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
-    <div className="form-grid"><Field label="Quantidade" required inputMode="decimal" maxLength={32} hint="Maior que zero, até 6 casas decimais. Sem separador de milhar." value={draft.quantity} error={form.fields.quantity} onChange={(event) => setDraft({ ...draft, quantity: event.target.value })} /><UnitSelect value={draft.unit_code} baseCode={material.purchase_unit_code} onChange={(unit_code) => setDraft({ ...draft, unit_code })} error={form.fields.unit_code} /></div>
+    <div className="form-grid"><QuantityField label="Quantidade" required inputMode="decimal" maxLength={32} hint={`Ex.: 0,5 ${draft.unit_code}. Quantidade na unidade escolhida.`} value={draft.quantity} error={form.fields.quantity} onChange={(event) => setDraft({ ...draft, quantity: event.target.value })} /><UnitSelect value={draft.unit_code} baseCode={material.purchase_unit_code} onChange={(unit_code) => setDraft({ ...draft, unit_code })} error={form.fields.unit_code} /></div>
   </fieldset><p className="info-note">A unidade deve ter a mesma dimensão da compra do material. Não há conversão automática.</p><div className="form-actions"><Link className="button secondary" to={back}>Voltar ao material</Link><button className="button primary" disabled={form.busy || !units.data?.some((unit) => unit.code === draft.unit_code)}>{form.busy ? 'Salvando…' : 'Salvar embalagem'}</button></div></form>
 }
 

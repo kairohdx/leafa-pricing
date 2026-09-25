@@ -30,9 +30,11 @@ O Nginx encaminha `/api/*` para `api:8000`, removendo o prefixo, e usa o DNS int
 
 Rotas como `/vendas/nova` retornam `index.html`; arquivos ausentes em `/assets/` retornam 404, sem HTML falso para JavaScript. Assets com hash recebem cache longo; HTML é revalidado e respostas de API não são armazenadas pelo proxy. `health.json` verifica o servidor estático; `/api/health` verifica a integração com a API. O Compose publica portas apenas no loopback e não configura TLS público.
 
-## Render Static Site — configuração preparada, publicação pendente
+## Render Static Site — demonstração descartável, publicação pendente
 
 O `render.yaml` inclui `leafa-front`, com raiz `front`, `npm ci && npm run build:hosted`, saída `dist` e rewrite `/*` para `/index.html`. O build hospedado exige `VITE_API_URL` HTTPS, sem credenciais, query ou fragmento; a configuração inválida falha antes de gerar o bundle.
+
+A API do Blueprint usa SQLite efêmero, sem PostgreSQL. Migrações e seed básico executam no startup. `VITE_DEMO_MODE=true` no Static Site inclui o aviso de dados descartáveis em login, cadastro e painel; localmente o aviso fica desligado por padrão. Contas são criadas pelo cadastro e podem desaparecer quando o Render descartar o filesystem.
 
 Ao criar/sincronizar o Blueprint, configure os valores marcados `sync: false`:
 

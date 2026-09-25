@@ -38,11 +38,11 @@ Cada comando é transacional. Dados inválidos, conflitos ou arquivo inacessíve
 
 ## Seed inicial
 
-Cinco dimensões: `count` (escala 0), `mass`, `length`, `area` e `volume` (escala 6). Unidades: `un`, `kg`, `g`, `m`, `cm`, `m2`, `L` e `mL`. Bases respectivas: unidade, quilograma, metro, metro quadrado e litro. Grama e mililitro usam 1/1000 da base; centímetro usa 1/100.
+Cinco dimensões: `count` (escala 0), `mass`, `length`, `area` e `volume` (escala 6). Unidades: `un`, `kg`, `g`, `m`, `cm`, `mm`, `m2`, `L` e `mL`. Bases respectivas: unidade, quilograma, metro, metro quadrado e litro. Grama, milímetro e mililitro usam 1/1000 da base; centímetro usa 1/100.
 
-O seed não exige modo de demonstração: são dados do catálogo, sem contas. Pode ser repetido preservando IDs, nomes e símbolos existentes. Conflitos de escala, dimensão ou fatores interrompem a transação, em vez de modificar dados silenciosamente. Não roda automaticamente no startup; execute explicitamente após a migração inicial.
+O seed não exige modo de demonstração: são dados do catálogo, sem contas. Pode ser repetido preservando IDs, nomes e símbolos existentes. Conflitos de escala, dimensão ou fatores interrompem a transação, em vez de modificar dados silenciosamente. Com `DEMO_MODE=true`, `app.scripts.start` executa o seed automaticamente depois das migrações, antes de servir a API. Fora do modo demo, execute explicitamente após a migração inicial.
 
-O catálogo armazena e publica fatores. Os CRUDs de materiais e produtos validam compatibilidade de dimensões; conversões e arredondamentos continuam pendentes.
+O catálogo armazena e publica fatores. Os CRUDs de materiais e produtos validam compatibilidade de dimensões; o motor de precificação usa esses fatores para conversões e custos (veja [precificação](pricing.md)).
 
 Atualização da integração com o frontend: a CLI passou a importar o registro completo dos models para funcionar também em processo novo, sem depender de imports prévios da aplicação/testes. Um teste de subprocesso valida migração, seed repetido e preservação dos IDs.
 

@@ -82,6 +82,7 @@ DIMENSIONS = [("count", "Contagem", 0), ("mass", "Massa", 6), ("length", "Compri
 UNITS = [("un", "Unidade", "un", "count", 1, 1),
          ("kg", "Quilograma", "kg", "mass", 1, 1), ("g", "Grama", "g", "mass", 1, 1000),
          ("m", "Metro", "m", "length", 1, 1), ("cm", "Centímetro", "cm", "length", 1, 100),
+         ("mm", "Milímetro", "mm", "length", 1, 1000),
          ("m2", "Metro quadrado", "m²", "area", 1, 1),
          ("L", "Litro", "L", "volume", 1, 1), ("mL", "Mililitro", "mL", "volume", 1, 1000)]
 

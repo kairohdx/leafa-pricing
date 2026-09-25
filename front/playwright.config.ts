@@ -21,7 +21,7 @@ export default defineConfig({
     url: 'http://127.0.0.1:5179/api/health',
     reuseExistingServer: false,
     timeout: 60_000,
-    gracefulShutdown: { signal: 'SIGTERM', timeout: 15_000 },
+    gracefulShutdown: process.platform === 'win32' ? undefined : { signal: 'SIGTERM', timeout: 15_000 },
     env: { DATABASE_URL: `sqlite:///${databaseDir}/test.db`, APP_ENV: 'test' },
   },
 })

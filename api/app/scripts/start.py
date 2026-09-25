@@ -1,4 +1,4 @@
-"""Wait for DB, migrate once, optionally seed, then serve a single API process."""
+"""Migrate, prepare the demo catalog, optionally seed accounts, then serve one process."""
 
 import argparse
 import os
@@ -8,6 +8,7 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session
 import uvicorn
 
 from app.core.config import ROOT, get_settings
@@ -33,6 +34,14 @@ def prepare_database(timeout=60, seed=False):
     config = Config(str(ROOT / "api/alembic.ini"))
     config.attributes["database_url"] = settings.database_url
     command.upgrade(config, "head")
+    if settings.demo_mode:
+        from app.modules.units.service import seed_catalog
+        engine = build_engine(settings.database_url)
+        try:
+            with Session(engine) as db, db.begin():
+                seed_catalog(db)
+        finally:
+            engine.dispose()
     if seed:
         from app.scripts.seed_demo import main
         main()

@@ -39,7 +39,7 @@ PATCH preserva campos omitidos. `notes` e `sku` aceitam nulo explícito; campos 
 
 ## Unidades e histórico
 
-Embalagens exigem a mesma dimensão da unidade de compra do material. Um material existente pode trocar sua unidade de compra somente dentro da mesma dimensão; não se transforma massa em comprimento. Ao trocar kg por g, informe a quantidade correspondente explicitamente: este CRUD não calcula conversões nem custos automaticamente. Fatores, escala por dimensão e arredondamento continuam reservados ao conversor futuro.
+Embalagens exigem a mesma dimensão da unidade de compra do material. Um material existente pode trocar sua unidade de compra somente dentro da mesma dimensão; não se transforma massa em comprimento. Ao trocar kg por g, informe a quantidade correspondente explicitamente: este CRUD não calcula conversões nem custos automaticamente. O CostEngine reutiliza os fatores racionais para converter quantidades ao calcular custos de produtos e vendas; o CRUD não altera automaticamente a quantidade de compra ao trocar sua unidade.
 
 Arquivamento não apaga registros nem modifica snapshots. Um material arquivado pode ser consultado, mas não editado nem receber novas embalagens. Suas embalagens não são arquivadas em cascata: conservam seu próprio estado, porém edição/restauração fica bloqueada enquanto o material pai estiver arquivado. Listagens de embalagens continuam disponíveis para consulta histórica. Restaurar o material não restaura embalagens arquivadas explicitamente.
 

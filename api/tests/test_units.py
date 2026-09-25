@@ -30,7 +30,7 @@ def test_seed_cli_in_fresh_process(tmp_path):
             assert "Catalog ready." in result.stdout
             with Session(engine) as db:
                 ids = set(db.scalars(select(UnitOfMeasure.id)))
-                assert len(ids) == 8
+                assert len(ids) == 9
                 assert db.scalar(select(func.count()).select_from(UnitDimension)) == 5
             if previous_ids is not None:
                 assert ids == previous_ids
@@ -47,8 +47,8 @@ def test_catalog_read_pagination_and_no_public_writes(client):
         service.seed_catalog(db)
     assert client.get("/units").status_code == 401
     page = client.get("/units?page_size=2", headers=headers).json()
-    assert len(page["items"]) == 2 and page["total"] == 8
-    assert client.get("/units", headers=login(client, "other")).json()["total"] == 8
+    assert len(page["items"]) == 2 and page["total"] == 9
+    assert client.get("/units", headers=login(client, "other")).json()["total"] == 9
     unit = client.get("/units/code/kg", headers=headers).json()
     assert client.get(f"/units/{unit['id']}", headers=headers).json() == unit
     assert client.get(f"/units?dimension_id={unit['dimension_id']}", headers=headers).json()["total"] == 2

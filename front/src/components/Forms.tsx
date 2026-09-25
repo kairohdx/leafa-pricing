@@ -1,3 +1,4 @@
+import { phoneDisplay } from './ValueFields'
 import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Feedback } from './Feedback'
@@ -12,11 +13,11 @@ export function Field({ label, hint, error, ...input }: InputHTMLAttributes<HTML
   </div>
 }
 
-export function SelectField({ label, value, onChange, children, disabled = false }: {
-  label: string; value: string; onChange: (value: string) => void; children: ReactNode; disabled?: boolean
+export function SelectField({ label, value, onChange, children, disabled = false, error }: {
+  label: string; value: string; onChange: (value: string) => void; children: ReactNode; disabled?: boolean; error?: string
 }) {
   const id = useId()
-  return <div className="form-field"><label htmlFor={id}>{label}</label><select id={id} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled}>{children}</select></div>
+  return <div className="form-field"><label htmlFor={id}>{label}</label><select id={id} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined}>{children}</select>{error && <small id={`${id}-error`} className="field-error">{error}</small>}</div>
 }
 
 export function FormFeedback({ state }: { state: Pick<ReturnType<typeof useFormAction>, 'error' | 'success'> }) {
@@ -32,7 +33,7 @@ export function PersonFields({ value, onChange, errors, prefix = '' }: {
     <Field label="Nome completo" name="name" autoComplete="name" required maxLength={255} value={value.name} error={errors[`${prefix}name`]} onChange={(event) => onChange({ ...value, name: event.target.value })} />
     <Field label="Nome de usuário" name="username" autoComplete="username" required maxLength={60} value={value.username} error={errors[`${prefix}username`]} onChange={(event) => onChange({ ...value, username: event.target.value })} />
     <Field label="Email" name="email" type="email" autoComplete="email" required maxLength={255} value={value.email} error={errors[`${prefix}email`]} onChange={(event) => onChange({ ...value, email: event.target.value })} />
-    <Field label="Telefone" name="phone" type="tel" autoComplete="tel" maxLength={20} value={value.phone} error={errors[`${prefix}phone`]} onChange={(event) => onChange({ ...value, phone: event.target.value })} />
+    <Field label="Telefone" name="phone" type="tel" autoComplete="tel" maxLength={20} onBlur={() => onChange({ ...value, phone: phoneDisplay(value.phone) })} value={value.phone} error={errors[`${prefix}phone`]} onChange={(event) => onChange({ ...value, phone: event.target.value })} />
   </div>
 }
 

@@ -1,6 +1,6 @@
 from typing import Annotated
 import json
-from pydantic import Field, AwareDatetime, JsonValue, AfterValidator
+from pydantic import Field, AwareDatetime, JsonValue, AfterValidator, StrictStr, StrictInt
 from app.schemas import Schema, Patch, TenantRead, Name
 
 
@@ -29,3 +29,9 @@ class PricingRuleUpdate(Patch):
 class PricingRuleRead(PricingRuleCreate, TenantRead):
     version: int
     archived_at: AwareDatetime | None = None
+
+
+class PricingPreview(Schema):
+    strategy_key: str
+    parameters: Parameters
+    base_cost: StrictStr | StrictInt | None = None

@@ -49,9 +49,10 @@ export function useFormAction() {
       if (cause instanceof ApiError) {
         if (cause.status === 409 && messages.conflict) message = messages.conflict
         if (cause.status === 403 && messages.forbidden) message = messages.forbidden
-        setFields(Object.fromEntries(cause.fields.map(({ field }) => [field.replace(/^body\./, ''), 'Confira o valor informado.'])))
+        setFields(Object.fromEntries(cause.fields.map(({ field, code }) => [field.replace(/^body\./, ''), field.startsWith('parameters.') && /^(Informe|A margem)/.test(code) ? code : code === 'decimal_invalid' ? (field.includes('quantity') ? 'Informe uma quantidade maior que zero, com até 6 casas decimais.' : 'Informe um valor entre zero e 92.233.720.368.547.758,07, com até 2 casas decimais.') : code === 'invalid_datetime' ? 'Escolha uma data e hora válidas no fuso da empresa.' : code === 'missing' ? 'Preencha este campo.' : 'Revise este campo e confira o formato solicitado.'])))
       }
       setError(message)
+      requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus())
       return false
     } finally { inFlight.current = false; setBusy(false) }
   }

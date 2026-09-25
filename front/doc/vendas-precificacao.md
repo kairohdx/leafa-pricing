@@ -1,31 +1,50 @@
 # Regras de precificação e vendas
 
-[Frontend](README.md) · [Contrato de regras](../../api/doc/pricing.md) · [Contrato de vendas](../../api/doc/sales.md)
+[Frontend](README.md) · [Motor e contratos](../../api/doc/pricing.md) · [Vendas](../../api/doc/sales.md)
 
 ## Regras
 
-`/precificacao` lista regras com busca, paginação e filtro de arquivamento. Administradores cadastram em `/precificacao/nova` e editam em `/precificacao/:id`; operadores consultam. Arquivar/restaurar exige confirmação. Arquivar remove o padrão e restaurar não o reaplica. Definir uma regra como padrão desmarca a anterior na API.
+Administradores criam/editam regras; operadores consultam. Listagem, busca, paginação, arquivamento, restauração e conflitos de versão continuam disponíveis. Arquivar remove o padrão; restaurar não o reaplica.
 
-O formulário aceita nome, descrição, identificador livre de estratégia, objeto JSON de parâmetros e definição de padrão. Não há estratégias executáveis ou cálculo de preço nesta etapa. JSON deve ser um objeto; números não finitos e inteiros fora da faixa segura do JavaScript são recusados. Para valores decimais exatos, use strings, por exemplo `{"margem":"0.30"}`. Alterar os parâmetros substitui o objeto inteiro.
+O formulário apresenta “Como você quer calcular o preço?” com cinco cards: Acréscimo sobre custo, Margem desejada, Margem + taxas, Multiplicar o custo e Valor fixo sobre o custo. Só os campos da estratégia escolhida ficam visíveis. Nomes técnicos e edição livre de JSON foram removidos dessa interface. A configuração inicial é acréscimo de 30%, editável, sem representar recomendação comercial. Não foi adicionada uma galeria separada de presets.
 
-Atualizações enviam `expected_version`. Em conflito 409, o formulário preserva a edição e bloqueia novo envio. A ação “Recarregar regra” pede confirmação para descartar a edição e consultar a versão atual. O usuário pode copiar o texto antes de recarregar; não há mesclagem automática nem repetição silenciosa com uma versão mais nova.
+Percentuais são informados como 30 para 30%. Campos decimais aceitam vírgula, enviada como ponto em strings. O servidor valida obrigatoriedade, parâmetros extras, limites, multiplicador positivo e margem + taxas menor que 100%. Erros de domínio são apresentados no simulador.
+
+Arredondamentos: sem ajuste comercial, inteiro para cima, terminação ,90 ou ,99. A adequação a centavos nunca reduz o preço bruto. Fórmulas e exemplos estão no contrato do motor.
+
+## Teste sua regra
+
+Disponível na criação, edição e consulta. Aceita custo hipotético e chama `POST /pricing-rules/preview` após 300 ms sem alterações. Exibe custo, preço bruto, ajuste, preço sugerido, taxas e margem após os custos modelados. Não duplica fórmulas no navegador e descarta respostas de requisições antigas. Resultado indisponível não aparece como zero. Campos inválidos impedem cálculo válido; não são convertidos silenciosamente em zero.
+
+PATCH mantém `expected_version`; conflito 409 preserva edição e exige recarregar com confirmação. Regras antigas desconhecidas continuam consultáveis, mas precisam de configuração válida para calcular. Atualização não reescreve snapshots de vendas.
+
+## Produtos
+
+O painel da composição consulta `GET /products/{id}/cost`, mostrando custo total, custo proporcional por componente, quantidade/unidade consumida, custo e quantidade de compra e embalagens disponíveis com custo proporcional. Atualizações na composição recarregam o custo.
+
+As embalagens existentes representam quantidades de material; não adicionam um custo próprio. A composição continua expressa em quantidade/unidade. Produto sem composição mostra indisponibilidade. Materiais com custo zero são válidos.
 
 ## Vendas
 
-`/vendas` oferece paginação e filtros de status/período. `/vendas/nova` cria rascunho e `/vendas/:id` consulta o histórico. Administradores e operadores criam/editam rascunhos e concluem vendas. Somente administradores cancelam. A conclusão exige ao menos um item; o total manual aceita zero. Vendas concluídas só podem ser canceladas; canceladas não podem ser reabertas. Não há exclusão.
+Rascunhos mantêm descrição, data, total final manual e regra opcional. A regra padrão não é aplicada automaticamente. Selecionar itens, mudar quantidades ou regra consulta `POST /sales/preview` e mostra custo total e sugestão por item/total. “Usar total sugerido” apenas preenche o campo manual; o usuário pode alterá-lo antes de salvar.
 
-O formulário inclui descrição, instante com fuso explícito, total manual e seleção opcional de regra. A regra padrão nunca é aplicada automaticamente. Seletores de regras e itens consultam apenas registros ativos, com busca e paginação. Materiais usam unidades da mesma dimensão, sem conversão. Produtos e serviços novos omitem unidade, conforme permitido pela API. Quantidades e dinheiro permanecem strings e passam pela validação exata do catálogo.
+Produtos e materiais recebem custo calculado e sugestão da regra. Unidades compatíveis são convertidas. Serviços usam o preço cadastrado, sem inventar custo. Se uma parcela estiver indisponível, seu total correspondente também fica indisponível. O total final manual continua aceitando zero e não precisa coincidir com a sugestão.
 
-Nesta versão, a entrada de datas é textual no formato ISO com deslocamento obrigatório (`2026-09-16T14:30:00-03:00`) ou UTC (`2026-09-16T17:30:00Z`). O rascunho começa no instante atual em UTC. As datas exibidas no detalhe/listagem usam o fuso IANA da empresa; o fuso do navegador não é assumido. O período tem início inclusivo e fim exclusivo. Um seletor de calendário com tratamento de horário de verão pode substituir essa entrada futuramente.
+O detalhe mostra valores capturados, regra/versão e memória do cálculo em linguagem legível. O backend preserva detalhes completos no snapshot. Moeda permanece a da venda; mudar moeda da empresa não converte históricos.
 
-Editar apenas descrição/data/total/regra omite `lines` e preserva os itens históricos. Mudanças efetivas de itens enviam a lista completa, inclusive `[]` para remover todos, e a API recaptura nomes/preços e recria IDs. Mudar somente a formatação de uma quantidade equivalente não substitui os itens. O formulário avisa sobre a recaptura; referências arquivadas precisam ser removidas/restauradas para substituir a lista. Erros preservam a edição. O total não é recalculado.
+Editar descrição/data/total preserva itens e cálculos. Trocar somente a regra usa custos capturados. Reenviar o mesmo ID preserva a versão histórica da regra. Alterar os itens envia a lista completa, recaptura custos/composição do catálogo e cria novos IDs; o formulário avisa. Referências arquivadas precisam ser removidas/restauradas para substituir itens. Sem regra, custos ainda ficam registrados, mas produtos/materiais não recebem sugestão.
 
-O detalhe usa nomes, preços unitários, regra/versão/parâmetros e moeda persistidos na venda. Nenhum valor histórico é reconstruído pelo catálogo atual. Custos, totais de itens e sugestões nulos aparecem como “Indisponível”; zero é exibido como valor monetário. Trocar a moeda da empresa não altera a moeda de vendas anteriores. Selecionar novamente o mesmo ID de regra mantém seu snapshot antigo; remover a regra envia `null`.
+Somente rascunhos são editáveis; conclusão exige itens e confirmação. Administradores cancelam. Conclusão e cancelamento não recalculam nem permitem reabrir a venda.
 
-Vendas ainda não têm controle de versão otimista. Edições concorrentes usam a última gravação recebida para os campos enviados. O formulário informa essa limitação. Conclusão/cancelamento exigem confirmação e retornam o estado persistido pela API.
+## Limites mantidos
 
-## Validação
+- Datas de entrada usam ISO com fuso explícito; exibição usa o fuso da empresa.
+- Vendas ainda não possuem controle otimista de versão; a última edição válida prevalece nos campos enviados.
+- O preço editável continua sendo o total da venda, conforme contrato existente. Não há preço final manual individual por linha; totais de linha representam a sugestão.
+- Não há conversão cambial nem custo de mão de obra para serviços.
+- Preview não reserva preços: uma alteração de catálogo antes de salvar novos itens pode mudar a sugestão capturada.
+- Mobile é validado em viewport Chromium, não Safari/dispositivo físico.
 
-Testes de validação cobrem JSON, datas com fuso, formato dos itens e quantidades equivalentes. Os cenários Playwright com API real cobrem conflitos de regra, padrão, arquivamento/restauração, vendas dos três tipos de item, precisão monetária, snapshots, moeda histórica, total zero, estados, filtros, paginação, permissões, referências arquivadas e isolamento entre empresas. São executados em Chromium desktop e viewport móvel. Não equivalem a validação em Safari ou dispositivo físico.
+## Testes
 
-Fórmulas, custos calculados, sugestões e conversões continuam dependentes do backend. [Indicadores e auditoria](indicadores-auditoria.md) estão disponíveis na entrega seguinte.
+`PricingCalculator.test.tsx` verifica chamadas ao backend com strings decimais, campos por estratégia, indisponibilidade e descarte de respostas atrasadas. `e2e/trading.spec.ts` cobre simulador, conflitos, permissões, histórico e vendas; `e2e/pricing.spec.ts` exercita composição, conversão, sugestão, substituição manual do preço e histórico após alterar material/regra. Consulte o README frontend para os resultados reais da entrega.

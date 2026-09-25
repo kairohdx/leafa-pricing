@@ -1,31 +1,35 @@
-# Render
+# Render — demonstração descartável
 
-O `render.yaml` da raiz define um Web Service Python para a API, um Render PostgreSQL separado e um Static Site para o frontend. O site chama diretamente a URL pública HTTPS da API. Configuração, CORS, build e CD do frontend estão no [guia de publicação](../front/doc/deploy.md).
+O `render.yaml` define somente uma API Python no plano `free` e um Static Site. Não provisiona PostgreSQL nem disco persistente. A API usa `sqlite:////tmp/leafa-demo.db`, com `APP_ENV=production`, `DEMO_MODE=true` e `PYTHONPATH=api`.
 
-O Blueprint seleciona planos pagos (`starter` para API e `basic-256mb` para banco), permitindo migração no pre-deploy e armazenamento separado da aplicação. Revise os planos e custos na conta antes de provisionar. Nenhum recurso foi criado nesta entrega.
+## Inicialização
+
+O build instala `api/requirements.txt`. O comando `python -m app.scripts.start` aguarda o banco, executa as migrações Alembic, prepara o catálogo básico e inicia uma única instância Uvicorn em `0.0.0.0:$PORT`. Não há pre-deploy: o banco precisa ser preparado no filesystem da instância que serve a API.
+
+Em modo demo, o seed automático cria cinco dimensões e nove unidades (`un`, `kg`, `g`, `m`, `cm`, `mm`, `m2`, `L`, `mL`), com fatores de conversão. É transacional e idempotente: inclui registros ausentes, preserva registros existentes e recusa conflitos nos fatores/dimensões. Um conflito interrompe a inicialização antes de liberar a API.
+
+Não cria empresas, usuários, senhas, materiais, vendas ou regras comerciais. As cinco estratégias já estão no código. Para experimentar, use `/cadastro`. O seed opcional de contas (`--seed`, com `DEMO_PASSWORD`) continua separado e não é chamado pelo Render.
+
+A inicialização não apaga um banco existente. Se o filesystem for descartado, o próximo start recria schema e catálogo básico; os cadastros anteriores não são recuperados. Não há expiração programada de 24 horas.
 
 ## Publicar
 
-1. Envie os arquivos ao repositório GitHub escolhido.
-2. No Render, crie um Blueprint associado ao repositório e confira os recursos de `render.yaml` antes de confirmar.
-3. O build instala `api/requirements.txt`; o pre-deploy executa `python -m alembic -c api/alembic.ini upgrade head`.
-4. O start executa `python -m uvicorn app.main:app --app-dir api --host 0.0.0.0 --port $PORT`. O health check usa `/health`.
-5. Confira os logs e teste `/health`, `/docs` e o fluxo autenticado após provisionar uma conta ou executar seed explicitamente.
+1. Envie os arquivos ao GitHub e associe um Blueprint ao repositório.
+2. Confira que os únicos recursos são `leafa-api` (free) e `leafa-front` (Static Site).
+3. Configure `CORS_ORIGINS=["https://URL-DO-FRONTEND"]` na API e `VITE_API_URL=https://URL-DA-API` no site, sem `/api` extra.
+4. O Blueprint já define `VITE_DEMO_MODE=true`; o build do frontend inclui o aviso de dados descartáveis no login, cadastro e painel.
+5. Confira logs, `/health`, `/docs`, cadastro/login e disponibilidade das unidades.
 
-O Render injeta `DATABASE_URL` a partir do banco. `APP_ENV=production` e `DEMO_MODE=false` estão definidos. `CORS_ORIGINS` na API e `VITE_API_URL` no frontend são solicitados via `sync: false`: configure a lista JSON de origens exatas do site e a URL pública HTTPS da API. O banco bloqueia acesso público por `ipAllowList: []`; conexão da API utiliza a rede interna.
+Se houver um serviço criado manualmente antes, atualize também seu start command e variáveis; alterar o arquivo local não muda o painel remoto. Não há banco remoto para criar ou configurar. Autodeploy continua desligado; o CD existente permanece opcional.
 
-Migrações ficam no pre-deploy, não no start de cada instância. Seed não é automático: para uma demonstração, habilite `DEMO_MODE`, disponibilize `DEMO_PASSWORD` temporariamente no ambiente do serviço e execute uma única vez `PYTHONPATH=api python -m app.scripts.seed_demo` pelo shell do Render. Remova a senha depois. Contas novas podem usar `/cadastro` no frontend. O catálogo global de unidades exige preparação explícita conforme o guia de unidades.
+## Dados descartáveis
 
-## Atualizar e recuperar
+O plano gratuito suspende a API após 15 minutos sem tráfego. O Render documenta perda de arquivos locais em suspensão, reinício e redeploy. A próxima visita pode aguardar a API iniciar. Tráfego contínuo pode mantê-la ativa: este modo não impõe um prazo máximo de retenção ou impede tecnicamente uso continuado.
 
-Autodeploy está desligado até o CI/CD do passo 0.2. Deploys manuais devem usar um commit testado. Confira também o Auto Sync do Blueprint para controlar alterações de infraestrutura.
+O aviso da interface é: “Ambiente de demonstração. Os dados podem ser apagados sem aviso. Use apenas dados fictícios.” Não há promessa de recuperação. Rollback recupera código, não os dados do SQLite anterior; o startup prepara o schema e catálogo na instância de destino.
 
-Se build ou migração falhar, verifique logs antes de tentar novamente. Depois da publicação, teste saúde e autenticação. Para voltar código, use o mecanismo de rollback/deploy do commit anterior do Render; isso não desfaz migrações. Mudanças de schema devem manter compatibilidade com a versão anterior, e recuperação de dados deve usar backup validado. Não rode downgrade destrutivo como rollback automático.
+## Validação
 
-## Limites
+Validação local: 64 testes de startup/unidades/motor aprovados; Ruff, ESLint, TypeScript e build com `VITE_DEMO_MODE=true` aprovados; YAML lido e configuração sem banco/pre-deploy conferida. Testes cobrem banco vazio, migrações, seed sem senha, reinício sem duplicação/perda de cadastros e recriação após descarte do arquivo SQLite temporário. Blueprint e publicação não foram executados no Render nesta etapa. Docker/PostgreSQL permanecem disponíveis separadamente no Compose, sem mudanças neste ajuste.
 
-O YAML foi revisado conforme documentação e sua sintaxe foi lida localmente. Não há acesso configurado à conta Render nesta sessão: Blueprint, conexão com banco hospedado, URLs e rollback ainda não foram validados remotamente. Publicação permanece pendente no checklist.
-
-SQLite efêmero continua permitido apenas para demonstração explícita, mas não é o banco deste Blueprint. Linux é o ambiente hospedado; o gerenciamento local pode ser feito por navegador em Linux ou Windows.
-
-Referências: [Blueprint](https://render.com/docs/blueprint-spec), [FastAPI](https://render.com/docs/deploy-fastapi), [deploys](https://render.com/docs/deploys) e [Blueprint Auto Sync](https://render.com/docs/infrastructure-as-code).
+Referências: [limites gratuitos e filesystem](https://render.com/docs/free), [comandos de deploy](https://render.com/docs/deploys) e [Blueprint](https://render.com/docs/blueprint-spec).

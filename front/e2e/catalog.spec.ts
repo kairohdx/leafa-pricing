@@ -18,7 +18,7 @@ async function account(page: Page, request: APIRequestContext, tag: string) {
 }
 async function confirm(page: Page, action: string) {
   await page.getByRole('button', { name: action, exact: true }).click()
-  await page.getByRole('button', { name: 'Confirmar', exact: true }).click()
+  await page.getByRole('dialog').getByRole('button').last().click()
   await expect(page.getByRole('dialog')).not.toBeVisible()
 }
 async function newMaterial(page: Page, name = 'Resina') {
@@ -40,7 +40,7 @@ test('material e embalagens: precisão, unidades, edição, arquivo e restauraç
   const materialId = await newMaterial(page)
   const response = await request.get(`/api/materials/${materialId}`, { headers })
   expect((await response.json()).purchase_quantity).toBe('2.500001')
-  await expect(page.getByText('BRL 70,25', { exact: true })).toBeVisible()
+  await expect(page.getByText('R$ 70,25', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Editar material' }).click()
   await expect(page.getByLabel('Unidade de compra').locator('option[value="m"]')).toHaveCount(0)
   await page.getByLabel('Observações').fill('Material de teste')
@@ -90,7 +90,7 @@ test('serviços: valores exatos, filtros, paginação e histórico', async ({ pa
   await page.getByLabel('Preço base').fill('9007199254740993,01')
   await page.getByLabel('Descrição').fill('Preço sem arredondamento no navegador')
   await page.getByRole('button', { name: 'Salvar serviço' }).click()
-  await expect(page.getByText('BRL 9.007.199.254.740.993,01', { exact: true })).toBeVisible()
+  await expect(page.getByText('R$ 9.007.199.254.740.993,01', { exact: true })).toBeVisible()
   const serviceId = page.url().split('/servicos/')[1]
   expect((await (await request.get(`/api/services/${serviceId}`, { headers })).json()).base_price).toBe('9007199254740993.01')
   await page.getByRole('button', { name: 'Editar serviço' }).click()
@@ -138,6 +138,8 @@ test('produto e composição: material duplicado, unidades e material arquivado'
   await page.getByRole('button', { name: 'Adicionar material' }).click()
   await expect(page.getByRole('button', { name: /Resina.*Já incluído/ })).toBeDisabled()
   await page.getByRole('button', { name: 'Cancelar inclusão' }).click()
+  // Large exact costs must wrap without enlarging the mobile layout viewport.
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   await page.getByRole('button', { name: 'Editar componente' }).click()
   await page.getByLabel('Quantidade na composição').fill('240,000002')
   await page.getByRole('button', { name: 'Salvar componente' }).click()

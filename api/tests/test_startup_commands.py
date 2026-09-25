@@ -13,10 +13,70 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import ROOT, get_settings
-from app.db.models import Company, User
+from app.db.models import Company, User, UnitOfMeasure, UnitDimension
 from app.db.session import build_engine
 from app.scripts.seed_demo import main as seed_demo
 from app.scripts.start import prepare_database
+
+
+def test_demo_startup_catalog_survives_restarts_and_recovers_empty_database(tmp_path, monkeypatch):
+    path = tmp_path / "disposable.db"
+    url = f"sqlite:///{path.as_posix()}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("DEMO_MODE", "true")
+    monkeypatch.delenv("DEMO_PASSWORD", raising=False)
+    get_settings.cache_clear()
+    try:
+        prepare_database()
+        engine = build_engine(url)
+        try:
+            with Session(engine) as db, db.begin():
+                ids = set(db.scalars(select(UnitOfMeasure.id)))
+                assert len(ids) == 9
+                assert db.scalar(select(func.count()).select_from(UnitDimension)) == 5
+                assert db.scalar(select(func.count()).select_from(User)) == 0
+                millimeter = db.scalar(select(UnitOfMeasure).where(UnitOfMeasure.code == "mm"))
+                assert (millimeter.factor_numerator, millimeter.factor_denominator) == (1, 1000)
+                millimeter.name = "Nome personalizado"
+                db.add(Company(name="Preservar", slug="preservar"))
+            prepare_database()
+            with Session(engine) as db:
+                assert set(db.scalars(select(UnitOfMeasure.id))) == ids
+                assert db.scalar(select(UnitOfMeasure.name).where(UnitOfMeasure.code == "mm")) == "Nome personalizado"
+                assert db.scalar(select(func.count()).select_from(Company)) == 1
+        finally:
+            engine.dispose()
+        # Only discard this test's SQLite file to simulate a fresh ephemeral filesystem.
+        path.unlink()
+        prepare_database()
+        engine = build_engine(url)
+        try:
+            with Session(engine) as db:
+                assert db.scalar(select(func.count()).select_from(UnitOfMeasure)) == 9
+                assert db.scalar(select(func.count()).select_from(Company)) == 0
+        finally:
+            engine.dispose()
+    finally:
+        get_settings.cache_clear()
+
+
+def test_normal_startup_does_not_enable_demo_catalog(tmp_path, monkeypatch):
+    url = f"sqlite:///{(tmp_path / 'normal.db').as_posix()}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    monkeypatch.setenv("APP_ENV", "test")
+    monkeypatch.setenv("DEMO_MODE", "false")
+    get_settings.cache_clear()
+    try:
+        prepare_database()
+        engine = build_engine(url)
+        try:
+            with Session(engine) as db:
+                assert db.scalar(select(func.count()).select_from(UnitOfMeasure)) == 0
+        finally:
+            engine.dispose()
+    finally:
+        get_settings.cache_clear()
 
 
 def test_prepare_database_and_idempotent_seed(tmp_path, monkeypatch):
